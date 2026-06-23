@@ -83,7 +83,7 @@ for (let i = 0; i < n - 1; i++) {
 
 **********************************************
 
-## 🤝 Contributing
+**## 🤝 Contributing**
 
 Contributions, issues, and feature requests are welcome!
 If you want to add a new algorithm or improve the UI:
