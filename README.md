@@ -48,4 +48,34 @@ This project is built to be as simple and accessible as possible. There are **no
    ```bash
    git clone [https://github.com/yourusername/algorithm-visualizer-pro.git](https://github.com/yourusername/algorithm-visualizer-pro.git)
 
+## 💻 Tech Stack
 
+* **HTML5:** Semantic structure.
+* **CSS3:** Advanced styling using CSS Variables, Flexbox, CSS Grid, and Glassmorphism techniques (`backdrop-filter`).
+* **Vanilla JavaScript (ES6+):** Complete application logic, DOM manipulation, asynchronous animations (`async/await`, `Promises`), and dynamic DSL parsing/execution.
+* **HTML Canvas:** Used for rendering the live theoretical vs actual complexity charts.
+
+---
+
+## 🧠 Custom DSL Quick Start
+
+Want to visualize your own algorithm? Navigate to the **Custom DSL** tab and use the built-in variables and functions:
+
+* `n` - Length of the array.
+* `compare(i, j)` - Compares elements at index `i` and `j`. Returns `> 0` if `arr[i] > arr[j]`. Triggers highlight animation.
+* `swap(i, j)` - Swaps elements at index `i` and `j`. Triggers swap animation.
+* `get(i)` - Reads the value at index `i`.
+* `set(i, value)` - Overwrites the value at index `i`. Triggers overwrite animation.
+
+**Example (Custom Selection Sort):**
+
+```javascript
+for (let i = 0; i < n - 1; i++) {
+  let minIdx = i;
+  for (let j = i + 1; j < n; j++) {
+    if (compare(j, minIdx) < 0) {
+      minIdx = j;
+    }
+  }
+  if (minIdx !== i) swap(i, minIdx);
+}
