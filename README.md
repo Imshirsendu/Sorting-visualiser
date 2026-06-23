@@ -82,12 +82,3 @@ for (let i = 0; i < n - 1; i++) {
 
 
 
-
-
-
-
-
-This project is open-source and available under the [MIT License](LICENSE).
-
----
-*Built with ❤️ by Shirsendu*
