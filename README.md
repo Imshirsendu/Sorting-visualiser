@@ -78,8 +78,8 @@ for (let i = 0; i < n - 1; i++) {
     }
   }
   if (minIdx !== i) swap(i, minIdx);
-} ```
-
+} 
+```
 ## 🤝 Contributing
 
 Contributions, issues, and feature requests are welcome!
