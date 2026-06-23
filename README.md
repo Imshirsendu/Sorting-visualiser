@@ -80,11 +80,7 @@ for (let i = 0; i < n - 1; i++) {
   if (minIdx !== i) swap(i, minIdx);
 }
 
-
-**********************************************
-
-**## 🤝 Contributing**
-
+## 🤝 Contributing
 Contributions, issues, and feature requests are welcome!
 If you want to add a new algorithm or improve the UI:
 
