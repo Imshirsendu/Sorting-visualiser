@@ -1,4 +1,4 @@
-# ⚡ Algorithm Visualizer - Pro
+# ⚡ Algorithm Visualizer -By shirsendu
 
 > A powerful, interactive, and beautifully designed web application to visualize, compare, and learn computer science algorithms.
 
@@ -47,3 +47,57 @@ This project is built to be as simple and accessible as possible. There are **no
 1. **Clone the repository:**
    ```bash
    git clone [https://github.com/yourusername/algorithm-visualizer-pro.git](https://github.com/yourusername/algorithm-visualizer-pro.git)
+
+
+   💻 Tech Stack
+HTML5: Semantic structure.
+
+CSS3: Advanced styling using CSS Variables, Flexbox, CSS Grid, and Glassmorphism techniques (backdrop-filter).
+
+Vanilla JavaScript (ES6+): Complete application logic, DOM manipulation, asynchronous animations (async/await, Promises), and dynamic DSL parsing/execution.
+
+HTML Canvas: Used for rendering the live theoretical vs actual complexity charts.
+
+🧠 Custom DSL Quick Start
+Want to visualize your own algorithm? Navigate to the Custom DSL tab and use the built-in variables and functions:
+
+n - Length of the array.
+
+compare(i, j) - Compares elements at index i and j. Returns > 0 if arr[i] > arr[j]. Triggers highlight animation.
+
+swap(i, j) - Swaps elements at index i and j. Triggers swap animation.
+
+get(i) - Reads the value at index i.
+
+set(i, value) - Overwrites the value at index i. Triggers overwrite animation.
+
+Example (Custom Selection Sort):
+
+JavaScript
+for (let i = 0; i < n - 1; i++) {
+  let minIdx = i;
+  for (let j = i + 1; j < n; j++) {
+    if (compare(j, minIdx) < 0) {
+      minIdx = j;
+    }
+  }
+  if (minIdx !== i) swap(i, minIdx);
+}
+🤝 Contributing
+Contributions, issues, and feature requests are welcome!
+If you want to add a new algorithm or improve the UI:
+
+Fork the project.
+
+Create your feature branch (git checkout -b feature/AmazingFeature).
+
+Commit your changes (git commit -m 'Add some AmazingFeature').
+
+Push to the branch (git push origin feature/AmazingFeature).
+
+Open a Pull Request.
+
+📄 License
+This project is open-source and available under the MIT License.
+
+Built with ❤️ by Shirsendu
