@@ -1,0 +1,2146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algorithm Visualizer - Pro</title>
+    <style>
+        :root {
+            --bg-grad-1: #eef2ff;
+            --bg-grad-2: #f5f3ff;
+            --bg-grad-3: #fdf4ff;
+            --glass-bg: rgba(255, 255, 255, 0.55);
+            --glass-bg-strong: rgba(255, 255, 255, 0.72);
+            --glass-border: rgba(255, 255, 255, 0.7);
+            --glass-shadow: 0 8px 32px rgba(99, 102, 241, 0.08), 0 1px 2px rgba(31, 41, 55, 0.04);
+            --surface-color: rgba(255, 255, 255, 0.6);
+            --text-main: #1e1b2e;
+            --text-muted: #6b7280;
+            --accent: #6366f1;
+            --accent-2: #a855f7;
+            --accent-yellow: #6366f1;
+            --accent-hover: #4f46e5;
+            --bar-color: rgba(99, 102, 241, 0.18);
+            --bar-compare: #fb7185;
+            --bar-active: #6366f1;
+            --bar-heap: #14b8a6;
+            --font-stack: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --border-color: rgba(99, 102, 241, 0.14);
+            --code-font: 'JetBrains Mono', 'Fira Code', Consolas, Monaco, monospace;
+        }
+
+        /* ── THEME OVERRIDES (Dark Mode Default now acts as Light, Dark mode flips it) ── */
+        /* Note: Your original CSS had light colors by default but a dark UI. 
+           We will use theme-dark to trigger the true dark mode. */
+        .theme-dark {
+            --bg-grad-1: #0f172a;
+            --bg-grad-2: #1e1b4b;
+            --bg-grad-3: #020617;
+            --glass-bg: rgba(15, 23, 42, 0.65);
+            --glass-bg-strong: rgba(15, 23, 42, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --surface-color: rgba(30, 41, 59, 0.7);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --bar-color: rgba(255, 255, 255, 0.1);
+            --bar-compare: #f43f5e;
+            --bar-active: #38bdf8;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font-stack); }
+        html { scroll-behavior: smooth; }
+
+        body {
+            background: linear-gradient(135deg, var(--bg-grad-1) 0%, var(--bg-grad-2) 50%, var(--bg-grad-3) 100%);
+            background-attachment: fixed;
+            color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column;
+            overflow-x: hidden; transition: background 0.4s, color 0.4s;
+            position: relative;
+        }
+
+        body::before {
+            content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+            background:
+                radial-gradient(circle at 15% 20%, rgba(99,102,241,0.10), transparent 45%),
+                radial-gradient(circle at 85% 10%, rgba(168,85,247,0.10), transparent 40%),
+                radial-gradient(circle at 50% 90%, rgba(20,184,166,0.08), transparent 45%);
+        }
+
+        /* ── GLASS PRIMITIVE ── */
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px) saturate(160%);
+            -webkit-backdrop-filter: blur(20px) saturate(160%);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            box-shadow: var(--glass-shadow);
+            transition: all 0.4s ease;
+        }
+
+        nav {
+            padding: 14px 40px; display: flex; justify-content: space-between; align-items: center;
+            background: var(--glass-bg-strong);
+            backdrop-filter: blur(24px) saturate(160%); -webkit-backdrop-filter: blur(24px) saturate(160%);
+            border-bottom: 1px solid var(--glass-border);
+            position: sticky; top: 0; z-index: 100; flex-wrap: wrap; gap: 15px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+            transition: all 0.4s ease;
+        }
+
+        .logo { display: flex; flex-direction: column; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; line-height: 1.1; }
+        .signature { font-size: 0.62rem; font-weight: 700; color: var(--accent); opacity: 0.75; letter-spacing: 3px; margin-top: 3px; text-transform: uppercase; }
+        .logo span {
+            background: linear-gradient(120deg, var(--accent), var(--accent-2));
+            -webkit-background-clip: text; background-clip: text; color: transparent;
+        }
+
+        .tabs { display: flex; gap: 6px; background: var(--surface-color); padding: 5px; border-radius: 12px; border: 1px solid var(--glass-border); transition: all 0.4s ease;}
+        .tabs button {
+            background: none; border: none; color: var(--text-muted); font-size: 0.88rem; cursor: pointer;
+            transition: all 0.25s; padding: 8px 14px; font-weight: 600; border-radius: 9px;
+        }
+        .tabs button:hover { color: var(--text-main); }
+        .tabs button.active {
+            color: #fff;
+            background: linear-gradient(120deg, var(--accent), var(--accent-2));
+            box-shadow: 0 4px 14px rgba(99,102,241,0.35);
+        }
+
+        .global-controls { display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
+        .global-controls label { font-size: 0.82rem; color: var(--text-muted); font-weight: 600; }
+        
+        input[type=range] { -webkit-appearance: none; width: 120px; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: var(--accent); cursor: pointer; margin-top: -6px; box-shadow: 0 2px 8px rgba(99,102,241,0.5); }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: rgba(99,102,241,0.2); border-radius: 2px; }
+        
+        button.control-btn {
+            background: var(--surface-color); color: var(--text-main); border: 1px solid var(--glass-border);
+            padding: 7px 14px; border-radius: 9px; cursor: pointer; font-size: 0.84rem; font-weight: 600; transition: all 0.2s;
+            backdrop-filter: blur(10px);
+        }
+        button.control-btn:hover { border-color: var(--accent); background: var(--glass-bg); }
+        button.control-btn.active-state { background: linear-gradient(120deg, var(--accent), var(--accent-2)); color: #fff; border-color: transparent; }
+
+        .container { display: none; flex: 1; padding: 24px 40px; gap: 26px; }
+        .container.active { display: flex; }
+
+        select, input[type=text], button.action-btn {
+            background: var(--surface-color); color: var(--text-main); border: 1px solid var(--glass-border);
+            padding: 10px 15px; border-radius: 10px; outline: none; font-size: 0.88rem; cursor: pointer;
+            backdrop-filter: blur(10px); font-weight: 500; transition: all 0.2s;
+        }
+        select:hover, input[type=text]:hover, button.action-btn:hover { border-color: var(--accent); }
+        input[type=text] { width: 250px; cursor: text; }
+        button.action-btn.primary {
+            background: linear-gradient(120deg, var(--accent), var(--accent-2)); color: #fff; font-weight: 700; border: none;
+            box-shadow: 0 6px 16px rgba(99,102,241,0.3);
+        }
+        button.action-btn.primary:hover { filter: brightness(1.08); transform: translateY(-1px); }
+
+        .visual-area { flex: 2; display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+        .controls-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 6px; }
+        
+        .bar-container {
+            height: 350px; display: flex; align-items: flex-end; padding: 20px;
+            background: var(--glass-bg); backdrop-filter: blur(20px) saturate(160%); -webkit-backdrop-filter: blur(20px) saturate(160%);
+            border-radius: 16px; overflow: hidden; border: 1px solid var(--glass-border); position: relative;
+            box-shadow: var(--glass-shadow); transition: all 0.4s ease;
+        }
+        .bar { flex: 1 1 auto; min-width: 1px; background: linear-gradient(180deg, var(--accent-2), var(--accent)); border-radius: 5px 5px 0 0; transition: height 0.1s ease, background-color 0.1s ease; box-shadow: 0 0 8px rgba(99,102,241,0.25); }
+        
+        .array-container {
+            display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; padding: 18px;
+            background: var(--glass-bg); border-radius: 16px; min-height: 80px; border: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px); box-shadow: var(--glass-shadow); transition: all 0.4s ease;
+        }
+        .array-box {
+            width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+            background: var(--surface-color); border: 1px solid var(--border-color); border-radius: 10px;
+            font-weight: 700; transition: all 0.4s ease; backdrop-filter: blur(6px);
+        }
+
+        .side-panel { flex: 1; display: flex; flex-direction: column; gap: 18px; min-width: 300px; }
+        .code-container {
+            background: var(--glass-bg); padding: 20px; border-radius: 16px; flex: 1; overflow-y: auto; overflow-x: auto;
+            border: 1px solid var(--glass-border); backdrop-filter: blur(20px); box-shadow: var(--glass-shadow); transition: all 0.4s ease;
+        }
+        .code-line { font-family: var(--code-font); padding: 4px 8px; color: var(--text-muted); border-left: 3px solid transparent; transition: all 0.2s; white-space: pre; font-size: 0.86rem; border-radius: 4px; }
+        .code-line.active { color: var(--text-main); background: rgba(99,102,241,0.12); border-left: 3px solid var(--accent); font-weight: 600; }
+        
+        .metrics-container { background: var(--glass-bg); padding: 20px; border-radius: 16px; border: 1px solid var(--glass-border); backdrop-filter: blur(20px); box-shadow: var(--glass-shadow); transition: all 0.4s ease; }
+        .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+        .metric-card { background: var(--surface-color); padding: 15px; border-radius: 12px; text-align: center; border: 1px solid var(--border-color); transition: all 0.4s ease;}
+        .metric-value { font-size: 1.2rem; color: var(--accent); margin-top: 5px; font-weight: 700; }
+
+        /* ── ALGO INFO CARD ── */
+        .algo-info-card { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 18px; backdrop-filter: blur(20px); box-shadow: var(--glass-shadow); transition: all 0.4s ease;}
+        .algo-info-card h4 { color: var(--accent); margin-bottom: 12px; font-size: 1rem; }
+        .complexity-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        .complexity-table th { color: var(--text-muted); font-weight: 600; text-align: left; padding: 4px 8px 8px 0; border-bottom: 1px solid var(--border-color); }
+        .complexity-table td { padding: 6px 8px 6px 0; color: var(--text-main); vertical-align: top; }
+        .complexity-table td.badge { font-family: var(--code-font); font-size: 0.85rem; }
+        .badge-green { color: #14b8a6; }
+        .badge-yellow { color: #f59e0b; }
+        .badge-red { color: #fb7185; }
+        .algo-desc { font-size: 0.82rem; color: var(--text-muted); margin-top: 10px; line-height: 1.5; }
+        .stable-tag { display: inline-block; font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; margin-left: 6px; font-weight: 700; }
+        .stable-yes { background: rgba(20,184,166,0.15); color: #0d9488; border: 1px solid rgba(20,184,166,0.4); }
+        .stable-no { background: rgba(251,113,133,0.15); color: #e11d48; border: 1px solid rgba(251,113,133,0.4); }
+
+        /* ── COMPLEXITY CHART ── */
+        .complexity-chart-wrap { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 16px; backdrop-filter: blur(20px); box-shadow: var(--glass-shadow); transition: all 0.4s ease;}
+        .complexity-chart-wrap h4 { color: var(--text-muted); font-size: 0.8rem; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+        #complexity-canvas { width: 100%; height: 120px; display: block; }
+
+        /* ── PROGRESS BAR ── */
+        .progress-wrap { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 14px; padding: 12px 16px; backdrop-filter: blur(16px); transition: all 0.4s ease;}
+        .progress-label { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px; font-weight: 600; }
+        .progress-track { background: rgba(99,102,241,0.12); border-radius: 4px; height: 6px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); border-radius: 4px; transition: width 0.15s ease; width: 0%; }
+
+        /* ── HEAP / AUX BUFFER VISUALIZER ── */
+        .heap-wrap {
+            background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 16px 18px;
+            backdrop-filter: blur(20px); box-shadow: var(--glass-shadow); display: none; transition: all 0.4s ease;
+        }
+        .heap-wrap.active { display: block; }
+        .heap-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .heap-header h4 { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+        .heap-badge { font-size: 0.7rem; padding: 2px 9px; border-radius: 10px; background: rgba(20,184,166,0.15); color: #0d9488; font-weight: 700; border: 1px solid rgba(20,184,166,0.35); }
+        .heap-slots { display: flex; gap: 6px; flex-wrap: wrap; min-height: 46px; align-items: center; }
+        .heap-cell {
+            width: 38px; height: 38px; border-radius: 9px; display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 0.85rem; background: rgba(20,184,166,0.12); border: 1.5px solid rgba(20,184,166,0.4);
+            color: #0d9488; transition: all 0.25s ease; animation: heapPop 0.25s ease;
+        }
+        .heap-cell.placing { background: rgba(20,184,166,0.35); transform: scale(1.12); border-color: #14b8a6; }
+        .heap-cell.empty-slot { background: rgba(0,0,0,0.03); border: 1.5px dashed rgba(99,102,241,0.2); color: transparent; }
+        @keyframes heapPop { from { transform: scale(0.4); opacity:0; } to { transform: scale(1); opacity:1; } }
+        .heap-flow-note { font-size: 0.76rem; color: var(--text-muted); margin-top: 8px; line-height: 1.4; font-style: italic; }
+
+        /* ── SORTED CELEBRATION ── */
+        #celebration-overlay {
+            position: fixed; inset: 0; pointer-events: none; z-index: 999;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.4s;
+        }
+        #celebration-overlay.show { opacity: 1; pointer-events: none; }
+        .celebration-burst { position: absolute; font-size: 2rem; animation: burstFly 1.4s ease-out forwards; }
+        @keyframes burstFly {
+            0%   { transform: translate(0,0) scale(0.5); opacity: 1; }
+            100% { transform: translate(var(--dx), var(--dy)) scale(1.4); opacity: 0; }
+        }
+        .sorted-banner {
+            background: linear-gradient(120deg, var(--accent), var(--accent-2)); color: #fff; font-weight: 800;
+            font-size: 1.6rem; padding: 14px 40px; border-radius: 16px;
+            letter-spacing: 1px; text-transform: uppercase;
+            animation: bannerPop 0.5s cubic-bezier(0.17,0.67,0.35,1.3) forwards;
+            position: relative; z-index: 2; box-shadow: 0 12px 40px rgba(99,102,241,0.4);
+            backdrop-filter: blur(10px);
+        }
+        @keyframes bannerPop { 0% { transform: scale(0.3); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+        /* ── COMPARE TAB ── */
+        .compare-header { display: flex; flex-direction: column; align-items: center; gap: 15px; margin-bottom: 20px; width: 100%; }
+        .compare-arena { display: flex; align-items: center; gap: 20px; width: 100%; }
+        .compare-side { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+        .vs-badge {
+            font-size: 1.6rem; font-weight: 800; letter-spacing: 1px; padding: 14px 16px; opacity: 0.95; margin-top: -50px;
+            background: linear-gradient(120deg, var(--accent), var(--accent-2)); color: #fff; border-radius: 50%;
+            width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 8px 24px rgba(99,102,241,0.35);
+        }
+        .stat-sub { font-size: 0.85rem; color: var(--text-muted); margin-top: 8px; letter-spacing: 0.3px; font-weight: 500; }
+
+        /* ── DEEP DIVE TAB ── */
+        #deepdive-tab { flex-direction: column; }
+        .dd-workspace { display: flex; gap: 26px; flex: 1; min-height: 500px; }
+        .dd-visuals {
+            flex: 2; display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+            background: var(--glass-bg); border-radius: 16px; border: 1px solid var(--glass-border); padding: 28px;
+            backdrop-filter: blur(20px); box-shadow: var(--glass-shadow); transition: all 0.4s ease;
+        }
+        .dd-slots-container { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; margin-top: auto; margin-bottom: auto; }
+        .dd-slot { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .dd-box {
+            width: 58px; height: 58px; display: flex; align-items: center; justify-content: center;
+            background: var(--surface-color); border: 2px solid var(--border-color); border-radius: 12px;
+            font-size: 1.4rem; font-weight: 700; transition: all 0.4s ease; color: var(--text-main);
+            backdrop-filter: blur(8px); box-shadow: 0 4px 12px rgba(99,102,241,0.08);
+        }
+        .dd-box.highlight { border-color: var(--bar-compare); background: rgba(251,113,133,0.12); }
+        .dd-box.swap { border-color: var(--bar-active); background: rgba(99,102,241,0.15); transform: scale(1.1); }
+        .dd-pointers { min-height: 58px; display: flex; flex-direction: column; gap: 4px; font-family: var(--code-font); font-weight: 700; font-size: 0.85rem; color: var(--text-muted); align-items: center; }
+        .ptr { background: rgba(99,102,241,0.15); padding: 2px 7px; border-radius: 6px; color: var(--text-main); animation: popIn 0.2s ease-out; transition: all 0.4s ease;}
+        .ptr-i { background: #3b82f6; color: white; }
+        .ptr-j { background: #a855f7; color: white; }
+        .ptr-min { background: #f97316; color: white; }
+        .ptr-key { background: #fb7185; color: white; }
+        .ptr-left { background: #14b8a6; color: white; }
+        .ptr-right { background: #475569; color: white; }
+        .ptr-gap { background: #ea580c; color: white; }
+        .dd-insight-box {
+            width: 100%; background: var(--surface-color); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color);
+            font-size: 0.95rem; line-height: 1.5; color: var(--text-main); font-weight: 500; backdrop-filter: blur(8px); transition: all 0.4s ease;
+        }
+        .dd-code-area {
+            flex: 1; background: var(--glass-bg); border-radius: 16px; border: 1px solid var(--glass-border); padding: 20px;
+            overflow-y: auto; font-family: var(--code-font); font-size: 1rem; line-height: 1.6;
+            backdrop-filter: blur(20px); box-shadow: var(--glass-shadow); transition: all 0.4s ease;
+        }
+        .dd-line { padding: 4px 8px; border-radius: 6px; border-left: 4px solid transparent; color: var(--text-muted); transition: all 0.2s; white-space: pre; }
+        .dd-line.active { color: var(--text-main); background: rgba(99,102,241,0.14); border-left-color: var(--accent); font-weight: 700; }
+        
+        /* ── DD PROGRESS ── */
+        .dd-progress-row { display: flex; align-items: center; gap: 12px; width: 100%; margin-top: 14px; }
+        .dd-step-label { font-size: 0.8rem; color: var(--text-muted); white-space: nowrap; min-width: 90px; text-align: right; font-weight: 600; }
+        .dd-prog-track { flex: 1; height: 5px; background: rgba(99,102,241,0.12); border-radius: 3px; overflow: hidden; }
+        .dd-prog-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-2)); border-radius: 3px; transition: width 0.15s; }
+
+        /* ── PATHFINDING TAB ── */
+        #pathfind-tab { flex-direction: column; }
+        .pf-controls { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+        .pf-legend { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
+        .pf-legend-dot { width: 14px; height: 14px; border-radius: 4px; display: inline-block; margin-right: 4px; vertical-align: middle; }
+        .pf-arena { display: flex; gap: 24px; flex: 1; }
+        .pf-grid-wrap {
+            flex: 1; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 16px;
+            display: flex; flex-direction: column; align-items: center; gap: 12px; backdrop-filter: blur(20px); box-shadow: var(--glass-shadow); transition: all 0.4s ease;
+        }
+        #pf-grid { display: grid; gap: 2px; cursor: pointer; user-select: none; }
+        .pf-cell { width: 28px; height: 28px; border-radius: 5px; transition: background 0.08s; background: rgba(99,102,241,0.05); border: 1px solid rgba(99,102,241,0.1); }
+        .pf-cell.wall    { background: #475569; border-color: #334155; }
+        .pf-cell.start   { background: #14b8a6; border-color: #0d9488; }
+        .pf-cell.end     { background: #fb7185; border-color: #e11d48; }
+        .pf-cell.visited { background: rgba(99,102,241,0.35); border-color: rgba(99,102,241,0.5); animation: visitAnim 0.2s ease; }
+        .pf-cell.path    { background: linear-gradient(120deg, var(--accent), var(--accent-2)); border-color: var(--accent); animation: pathAnim 0.3s ease; }
+        .pf-cell.frontier { background: #60a5fa; border-color: #3b82f6; }
+        @keyframes visitAnim { from { transform: scale(0.3); } to { transform: scale(1); } }
+        @keyframes pathAnim  { from { transform: scale(0.4); } to { transform: scale(1); } }
+        .pf-side { width: 280px; display: flex; flex-direction: column; gap: 16px; flex-shrink: 0; }
+        .pf-info-card { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 16px; backdrop-filter: blur(20px); box-shadow: var(--glass-shadow); transition: all 0.4s ease;}
+        .pf-info-card h4 { color: var(--accent); margin-bottom: 10px; }
+        .pf-stat { display: flex; justify-content: space-between; font-size: 0.85rem; padding: 4px 0; border-bottom: 1px solid var(--border-color); }
+        .pf-stat:last-child { border-bottom: none; }
+        .pf-stat-val { color: var(--accent); font-weight: 700; }
+        .pf-desc { font-size: 0.82rem; color: var(--text-muted); line-height: 1.6; margin-top: 8px; }
+        .pf-mode-row { display: flex; gap: 8px; flex-wrap: wrap; }
+        .pf-mode-btn { background: var(--surface-color); color: var(--text-muted); border: 1px solid var(--glass-border); padding: 6px 12px; border-radius: 9px; cursor: pointer; font-size: 0.82rem; font-weight: 600; transition: all 0.2s; }
+        .pf-mode-btn.active { background: linear-gradient(120deg, var(--accent), var(--accent-2)); color: #fff; border-color: transparent; }
+
+        /* ── CUSTOM ALGO DSL TAB ── */
+        #custom-tab { flex-direction: column; }
+        .dsl-layout { display: flex; gap: 24px; flex: 1; min-height: 560px; }
+        .dsl-editor-panel { flex: 1; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+        .dsl-editor-wrap {
+            background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; overflow: hidden;
+            backdrop-filter: blur(20px); box-shadow: var(--glass-shadow); display: flex; flex-direction: column; flex: 1;
+            transition: all 0.4s ease;
+        }
+        .dsl-editor-header {
+            display: flex; justify-content: space-between; align-items: center; padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color); background: rgba(128,128,128,0.1);
+        }
+        .dsl-editor-header span { font-size: 0.78rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+        #dsl-code-input {
+            flex: 1; width: 100%; resize: none; border: none; outline: none; background: transparent;
+            font-family: var(--code-font); font-size: 0.9rem; line-height: 1.7; padding: 16px; color: var(--text-main);
+            min-height: 280px; tab-size: 2;
+        }
+        .dsl-ref-panel {
+            background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 16px;
+            backdrop-filter: blur(20px); box-shadow: var(--glass-shadow); font-size: 0.8rem; transition: all 0.4s ease;
+        }
+        .dsl-ref-panel h4 { color: var(--accent); margin-bottom: 10px; font-size: 0.85rem; }
+        .dsl-ref-item { font-family: var(--code-font); background: rgba(99,102,241,0.08); padding: 6px 10px; border-radius: 8px; margin-bottom: 6px; display: flex; justify-content: space-between; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+        .dsl-ref-item code { color: var(--accent-2); font-weight: 700; }
+        .dsl-ref-item span { color: var(--text-muted); font-size: 0.74rem; }
+        .dsl-console {
+            background: rgba(30,27,46,0.9); color: #d1fae5; border-radius: 12px; padding: 12px 14px; font-family: var(--code-font);
+            font-size: 0.78rem; min-height: 70px; max-height: 140px; overflow-y: auto; line-height: 1.5;
+        }
+        .dsl-console .err { color: #fca5a5; }
+        .dsl-console .ok { color: #6ee7b7; }
+        .dsl-result-panel { flex: 1; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+        .dsl-presets { display: flex; gap: 8px; flex-wrap: wrap; }
+        .dsl-preset-btn { background: var(--surface-color); border: 1px solid var(--glass-border); padding: 6px 12px; border-radius: 9px; cursor: pointer; font-size: 0.78rem; font-weight: 600; color: var(--text-muted); transition: all 0.2s; }
+        .dsl-preset-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+        /* ── CODE LIBRARY TAB ── */
+        #library-tab { flex-direction: column; }
+        .lib-layout { display: flex; gap: 24px; flex: 1; min-height: 600px; }
+        .lib-sidebar {
+            width: 260px; flex-shrink: 0; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px;
+            padding: 12px; backdrop-filter: blur(20px); box-shadow: var(--glass-shadow); overflow-y: auto; max-height: 700px; transition: all 0.4s ease;
+        }
+        .lib-cat-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-weight: 700; padding: 10px 10px 6px; }
+        .lib-item {
+            padding: 9px 12px; border-radius: 9px; cursor: pointer; font-size: 0.86rem; font-weight: 600; color: var(--text-main);
+            transition: all 0.15s; margin-bottom: 2px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .lib-item:hover { background: rgba(99,102,241,0.08); }
+        .lib-item.active { background: linear-gradient(120deg, var(--accent), var(--accent-2)); color: #fff; }
+        .lib-item .lib-tag { font-size: 0.65rem; opacity: 0.7; font-weight: 700; }
+        .lib-main { flex: 1; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+        .lib-header-card { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 18px 22px; backdrop-filter: blur(20px); box-shadow: var(--glass-shadow); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; transition: all 0.4s ease;}
+        .lib-header-card h2 { font-size: 1.3rem; font-weight: 800; }
+        .lib-code-wrap {
+            background: rgba(30,27,46,0.94); border-radius: 16px; padding: 22px; flex: 1; overflow: auto;
+            box-shadow: var(--glass-shadow); position: relative;
+        }
+        .lib-code-wrap pre { font-family: var(--code-font); font-size: 0.86rem; line-height: 1.7; color: #e2e8f0; white-space: pre; }
+        .lib-code-wrap .kw { color: #c4b5fd; } .lib-code-wrap .fn { color: #93c5fd; } .lib-code-wrap .cm { color: #6b7280; font-style: italic; } .lib-code-wrap .str { color: #6ee7b7; } .lib-code-wrap .num { color: #fbbf24; }
+        .lib-copy-btn {
+            position: absolute; top: 16px; right: 16px; background: rgba(255,255,255,0.12); color: #e2e8f0; border: 1px solid rgba(255,255,255,0.2);
+            padding: 6px 12px; border-radius: 9px; font-size: 0.78rem; cursor: pointer; font-weight: 600; transition: all 0.2s;
+        }
+        .lib-copy-btn:hover { background: rgba(255,255,255,0.22); }
+        .lib-run-panel { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 16px 20px; backdrop-filter: blur(20px); box-shadow: var(--glass-shadow); transition: all 0.4s ease;}
+        .lib-run-output { font-family: var(--code-font); font-size: 0.82rem; background: rgba(99,102,241,0.06); border-radius: 10px; padding: 12px; margin-top: 10px; color: var(--text-main); min-height: 24px; word-break: break-word; }
+
+        @keyframes popIn { 0% { transform: translateY(-10px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+
+        @media (max-width: 900px) {
+            .container.active { flex-direction: column; }
+            .side-panel { min-width: 100%; }
+            .compare-arena, .dd-workspace, .pf-arena, .dsl-layout, .lib-layout { flex-direction: column; gap: 20px; }
+            .vs-badge { margin-top: 0; }
+            input[type=text] { width: 100%; }
+            .pf-side { width: 100%; }
+            .pf-cell { width: 22px; height: 22px; }
+            .lib-sidebar { width: 100%; max-height: 220px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="celebration-overlay"></div>
+
+    <nav id="main-nav">
+        <div class="logo">
+            <div>Algorithm <span>Visualiser</span></div>
+            <div class="signature">BY SHIRSENDU</div>
+        </div>
+        <div class="tabs">
+            <button class="active" onclick="switchTab('visualize')">Visualize</button>
+            <button onclick="switchTab('compare')">Compare</button>
+            <button onclick="switchTab('deepdive')">Deep Dive <span style="font-size:0.7em; color:var(--accent-yellow)">PRO</span></button>
+            <button onclick="switchTab('pathfind')">Pathfinding <span style="font-size:0.7em; color:#2ecc71">NEW</span></button>
+            <button onclick="switchTab('custom')">Custom DSL <span style="font-size:0.7em; color:#a855f7">PRO</span></button>
+            <button onclick="switchTab('library')">Library</button>
+        </div>
+        <div class="global-controls">
+            <button id="theme-toggle" class="control-btn" onclick="toggleTheme()" style="font-size: 1.1rem; padding: 4px 10px;" title="Toggle Dark/Light Mode">☀️</button>
+            <label for="global-speed">Speed</label>
+            <input type="range" id="global-speed" min="1" max="100" value="70">
+            <button id="btn-pause" class="control-btn" onclick="togglePause()">Pause</button>
+            <button id="btn-step" class="control-btn" onclick="stepForward()">Step ></button>
+        </div>
+    </nav>
+
+    <div id="visualize-tab" class="container active">
+        <div class="visual-area">
+            <div class="controls-row">
+                <select id="algo-select" onchange="updateCodeView()">
+                    <option value="bubble">Bubble Sort</option>
+                    <option value="selection">Selection Sort</option>
+                    <option value="insertion">Insertion Sort</option>
+                    <option value="merge">Merge Sort</option>
+                    <option value="quick">Quick Sort</option>
+                    <option value="heap">Heap Sort</option>
+                    <option value="shell">Shell Sort</option>
+                    <option value="radix">Radix Sort</option>
+                    <option value="counting">Counting Sort</option>
+                    <option value="cocktail">Cocktail Shaker</option>
+                </select>
+                <input type="text" id="custom-input" placeholder="e.g., 5, 2, 8, 1 (Max 15)">
+                <button class="action-btn" onclick="setCustomArray()">Set Data</button>
+                <button class="action-btn" onclick="generateRandom()">Random 10</button>
+                <button class="action-btn primary" onclick="startSort()">Visualize</button>
+            </div>
+
+            <div class="progress-wrap">
+                <div class="progress-label">
+                    <span id="progress-label-text">Ready</span>
+                    <span id="progress-pct">0%</span>
+                </div>
+                <div class="progress-track"><div class="progress-fill" id="sort-progress-fill"></div></div>
+            </div>
+
+            <div class="bar-container" id="bars"></div>
+            <div class="array-container" id="array-boxes"></div>
+
+            <div id="heap-wrap" class="heap-wrap">
+                <div class="heap-header">
+                    <h4>Auxiliary Memory</h4>
+                    <span class="heap-badge" id="heap-badge">O(n) space</span>
+                </div>
+                <div class="heap-slots" id="heap-slots"></div>
+                <div class="heap-flow-note" id="heap-note"></div>
+            </div>
+        </div>
+        <div class="side-panel">
+            <div class="code-container" id="code-view"></div>
+
+            <div class="algo-info-card" id="algo-info-card"></div>
+
+            <div class="complexity-chart-wrap">
+                <h4>Live Comparisons vs Theoretical</h4>
+                <canvas id="complexity-canvas" height="120"></canvas>
+            </div>
+
+            <div class="metrics-container">
+                <h3 style="margin-bottom:10px;">Live Stats</h3>
+                <div class="metrics-grid" style="margin-top:0;">
+                    <div class="metric-card"><div style="font-size:0.8rem;color:var(--text-muted)">Comparisons</div><div class="metric-value" id="live-comps">0</div></div>
+                    <div class="metric-card"><div style="font-size:0.8rem;color:var(--text-muted)">Swaps/Writes</div><div class="metric-value" id="live-swaps">0</div></div>
+                </div>
+                <h4 style="margin-top:20px;margin-bottom:10px;color:var(--text-muted);font-size:0.9rem;">Fast Benchmark Simulator</h4>
+                <div style="display:flex;gap:10px;">
+                    <select id="benchmark-size" class="action-btn" style="flex:1;padding:8px;">
+                        <option value="10">10 Elem</option>
+                        <option value="100">100 Elem</option>
+                        <option value="500">500 Elem</option>
+                    </select>
+                    <button class="action-btn" style="flex:1;" onclick="runBenchmark()">Run</button>
+                </div>
+                <div id="benchmark-result" style="text-align:center;margin-top:10px;color:var(--accent-yellow);font-size:0.9rem;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="compare-tab" class="container">
+        <div style="width:100%;">
+            <div class="compare-header">
+                <div style="display:flex;gap:15px;align-items:center;flex-wrap:wrap;justify-content:center;">
+                    <select id="compare-size" class="action-btn" style="width:200px;">
+                        <option value="10">10 Elements</option>
+                        <option value="50">50 Elements</option>
+                        <option value="100">100 Elements</option>
+                        <option value="300">300 Elements</option>
+                    </select>
+                    <button class="action-btn primary" onclick="runCompare()">Compare Speeds</button>
+                </div>
+            </div>
+            <div class="compare-arena">
+                <div class="compare-side">
+                    <select id="compare-algo-1" class="action-btn" style="width:100%;margin-bottom:15px;">
+                        <option value="bubble">Bubble Sort</option><option value="selection">Selection Sort</option>
+                        <option value="insertion">Insertion Sort</option><option value="merge" selected>Merge Sort</option>
+                        <option value="quick">Quick Sort</option><option value="heap">Heap Sort</option>
+                        <option value="shell">Shell Sort</option><option value="radix">Radix Sort</option>
+                        <option value="counting">Counting Sort</option><option value="cocktail">Cocktail Shaker</option>
+                    </select>
+                    <div class="bar-container" id="bars-compare-1" style="height:350px;"></div>
+                    <div class="metric-card" style="margin-top:15px;"><div id="compare-time-1" class="metric-value">0.00 ms</div><div id="compare-stats-1" class="stat-sub">Comps: 0 | Swaps: 0</div></div>
+                </div>
+                <div class="vs-badge">VS</div>
+                <div class="compare-side">
+                    <select id="compare-algo-2" class="action-btn" style="width:100%;margin-bottom:15px;">
+                        <option value="bubble">Bubble Sort</option><option value="selection">Selection Sort</option>
+                        <option value="insertion">Insertion Sort</option><option value="merge">Merge Sort</option>
+                        <option value="quick" selected>Quick Sort</option><option value="heap">Heap Sort</option>
+                        <option value="shell">Shell Sort</option><option value="radix">Radix Sort</option>
+                        <option value="counting">Counting Sort</option><option value="cocktail">Cocktail Shaker</option>
+                    </select>
+                    <div class="bar-container" id="bars-compare-2" style="height:350px;"></div>
+                    <div class="metric-card" style="margin-top:15px;"><div id="compare-time-2" class="metric-value">0.00 ms</div><div id="compare-stats-2" class="stat-sub">Comps: 0 | Swaps: 0</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="deepdive-tab" class="container">
+        <div style="width:100%;">
+            <div class="controls-row" style="margin-bottom:20px;">
+                <select id="dd-algo" onchange="initDeepDive()">
+                    <option value="bubble">Bubble Sort</option><option value="selection">Selection Sort</option>
+                    <option value="insertion">Insertion Sort</option><option value="merge">Merge Sort</option>
+                    <option value="quick">Quick Sort</option><option value="heap">Heap Sort</option>
+                    <option value="shell">Shell Sort</option><option value="radix">Radix Sort</option>
+                    <option value="counting">Counting Sort</option><option value="cocktail">Cocktail Shaker</option>
+                </select>
+                <input type="text" id="dd-input" value="8, 3, 5, 1, 9, 2" placeholder="Comma separated nums">
+                <button class="action-btn" onclick="initDeepDive()">Load Array</button>
+                <div style="flex:1"></div>
+                <button class="action-btn" onclick="ddStepBack()">&#60; Step Back</button>
+                <button class="action-btn primary" id="dd-play-btn" onclick="ddTogglePlay()">Play Auto</button>
+                <button class="action-btn" onclick="ddStepForward()">Step Forward &#62;</button>
+            </div>
+            <div class="dd-workspace">
+                <div class="dd-visuals">
+                    <div id="dd-slots" class="dd-slots-container"></div>
+                    <div id="dd-insight" class="dd-insight-box">Initialize your array to view automated micro-step insights here.</div>
+                    <div class="dd-progress-row">
+                        <div class="dd-step-label" id="dd-step-label">Step 0 / 0</div>
+                        <div class="dd-prog-track"><div class="dd-prog-fill" id="dd-prog-fill"></div></div>
+                    </div>
+                </div>
+                <div class="dd-code-area" id="dd-code-view"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="pathfind-tab" class="container">
+        <div style="width:100%;display:flex;flex-direction:column;gap:16px;">
+            <div class="pf-controls">
+                <select id="pf-algo" class="action-btn">
+                    <option value="bfs">BFS — Breadth-First Search</option>
+                    <option value="dfs">DFS — Depth-First Search</option>
+                    <option value="dijkstra">Dijkstra's Algorithm</option>
+                    <option value="astar">A* Search</option>
+                </select>
+                <div class="pf-mode-row" id="pf-mode-row">
+                    <button class="pf-mode-btn active" onclick="setPfMode('wall')" id="pf-btn-wall">✏ Draw Walls</button>
+                    <button class="pf-mode-btn" onclick="setPfMode('start')" id="pf-btn-start">🟢 Set Start</button>
+                    <button class="pf-mode-btn" onclick="setPfMode('end')" id="pf-btn-end">🔴 Set End</button>
+                </div>
+                <button class="action-btn primary" onclick="runPathfind()">Find Path</button>
+                <button class="action-btn" onclick="clearPfGrid()">Clear All</button>
+                <button class="action-btn" onclick="clearPfPath()">Clear Path</button>
+                <button class="action-btn" onclick="generateMaze()">Generate Maze</button>
+            </div>
+            <div class="pf-legend">
+                <span><span class="pf-legend-dot" style="background:#14b8a6;"></span>Start</span>
+                <span><span class="pf-legend-dot" style="background:#fb7185;"></span>End</span>
+                <span><span class="pf-legend-dot" style="background:#475569;"></span>Wall</span>
+                <span><span class="pf-legend-dot" style="background:rgba(99,102,241,0.5);"></span>Visited</span>
+                <span><span class="pf-legend-dot" style="background:#6366f1;"></span>Shortest Path</span>
+            </div>
+            <div class="pf-arena">
+                <div class="pf-grid-wrap">
+                    <div id="pf-grid"></div>
+                </div>
+                <div class="pf-side">
+                    <div class="pf-info-card" id="pf-algo-info"></div>
+                    <div class="pf-info-card">
+                        <h4>Run Stats</h4>
+                        <div class="pf-stat"><span>Nodes Visited</span><span class="pf-stat-val" id="pf-stat-visited">–</span></div>
+                        <div class="pf-stat"><span>Path Length</span><span class="pf-stat-val" id="pf-stat-path">–</span></div>
+                        <div class="pf-stat"><span>Time</span><span class="pf-stat-val" id="pf-stat-time">–</span></div>
+                        <div class="pf-stat"><span>Status</span><span class="pf-stat-val" id="pf-stat-status">–</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="custom-tab" class="container">
+        <div style="width:100%;display:flex;flex-direction:column;gap:16px;">
+            <div class="controls-row" style="margin-bottom:0;">
+                <input type="text" id="dsl-array-input" value="9, 2, 7, 1, 5, 3" placeholder="Comma separated nums (max 12)" style="width:260px;">
+                <button class="action-btn" onclick="dslSetArray()">Load Array</button>
+                <button class="action-btn primary" onclick="dslRun()">▶ Run My Algorithm</button>
+                <div style="flex:1"></div>
+                <button class="action-btn" id="dsl-play-btn" onclick="dslTogglePlay()">Play Auto</button>
+                <button class="action-btn" onclick="dslStepBack()">&#60; Step</button>
+                <button class="action-btn" onclick="dslStepForward()">Step &#62;</button>
+            </div>
+            <div class="dsl-layout">
+                <div class="dsl-editor-panel">
+                    <div class="dsl-presets">
+                        <button class="dsl-preset-btn" onclick="dslLoadPreset('bubble')">Bubble preset</button>
+                        <button class="dsl-preset-btn" onclick="dslLoadPreset('selection')">Selection preset</button>
+                        <button class="dsl-preset-btn" onclick="dslLoadPreset('blank')">Clear editor</button>
+                    </div>
+                    <div class="dsl-editor-wrap">
+                        <div class="dsl-editor-header">
+                            <span>my_algorithm.dsl</span>
+                            <span id="dsl-line-count">0 lines</span>
+                        </div>
+                        <textarea id="dsl-code-input" spellcheck="false"></textarea>
+                    </div>
+                    <div class="dsl-console" id="dsl-console">Write your algorithm, then hit "Run My Algorithm".</div>
+                </div>
+                <div class="dsl-result-panel">
+                    <div class="bar-container" id="dsl-bars" style="height:300px;"></div>
+                    <div class="array-container" id="dsl-boxes"></div>
+                    <div class="progress-wrap">
+                        <div class="progress-label"><span id="dsl-step-text">Step 0 / 0</span><span id="dsl-pct">0%</span></div>
+                        <div class="progress-track"><div class="progress-fill" id="dsl-progress-fill"></div></div>
+                    </div>
+                    <div class="metrics-container">
+                        <h3 style="margin-bottom:10px;">Run Stats</h3>
+                        <div class="metrics-grid" style="margin-top:0;">
+                            <div class="metric-card"><div style="font-size:0.8rem;color:var(--text-muted)">Comparisons</div><div class="metric-value" id="dsl-comps">0</div></div>
+                            <div class="metric-card"><div style="font-size:0.8rem;color:var(--text-muted)">Swaps</div><div class="metric-value" id="dsl-swaps">0</div></div>
+                        </div>
+                    </div>
+                    <div class="dsl-ref-panel">
+                        <h4>DSL Reference</h4>
+                        <div class="dsl-ref-item"><code>compare(i, j)</code><span>highlight + count a comparison</span></div>
+                        <div class="dsl-ref-item"><code>swap(i, j)</code><span>swap two elements &amp; animate</span></div>
+                        <div class="dsl-ref-item"><code>set(i, value)</code><span>overwrite index i</span></div>
+                        <div class="dsl-ref-item"><code>get(i)</code><span>read current value at i</span></div>
+                        <div class="dsl-ref-item"><code>n</code><span>length of the array</span></div>
+                        <div class="dsl-ref-item"><code>for / while / if</code><span>standard JS control flow</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="library-tab" class="container">
+        <div class="lib-layout" style="width:100%;">
+            <div class="lib-sidebar" id="lib-sidebar"></div>
+            <div class="lib-main">
+                <div class="lib-header-card">
+                    <div>
+                        <h2 id="lib-title">Bubble Sort</h2>
+                        <div style="color:var(--text-muted);font-size:0.82rem;margin-top:4px;" id="lib-subtitle">O(n²) time · O(1) space</div>
+                    </div>
+                    <button class="action-btn primary" onclick="libRunActive()">▶ Run &amp; Test</button>
+                </div>
+                <div class="lib-code-wrap">
+                    <button class="lib-copy-btn" onclick="libCopyActive()">Copy code</button>
+                    <pre id="lib-code-display"></pre>
+                </div>
+                <div class="lib-run-panel">
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                        <input type="text" id="lib-test-input" value="5, 3, 8, 1, 9, 2" style="width:220px;" placeholder="Test input array">
+                        <span style="color:var(--text-muted);font-size:0.82rem;">passed to the function above and executed live in your browser</span>
+                    </div>
+                    <div class="lib-run-output" id="lib-run-output">Output will appear here.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// ALGO META DATA
+// ═══════════════════════════════════════════════════════════════
+const algoData = {
+    bubble:    { time:"O(n²)",      best:"O(n)",      space:"O(1)",       stable:true,  adaptive:true,  usesAux:false, desc:"Repeatedly steps through the list, compares adjacent elements and swaps them if out of order. Simple but inefficient for large datasets.",  code:["for i = 0 to n-1","  for j = 0 to n-i-1","    if arr[j] > arr[j+1]","      swap(arr[j], arr[j+1])"] },
+    selection: { time:"O(n²)",      best:"O(n²)",     space:"O(1)",       stable:false, adaptive:false, usesAux:false, desc:"Divides the array into sorted/unsorted regions and repeatedly selects the minimum from unsorted, placing it at the end of sorted.",            code:["for i = 0 to n-1","  min_idx = i","  for j = i+1 to n","    if arr[j] < arr[min_idx]","      min_idx = j","  swap(arr[min_idx], arr[i])"] },
+    insertion: { time:"O(n²)",      best:"O(n)",      space:"O(1)",       stable:true,  adaptive:true,  usesAux:false, desc:"Builds sorted array one element at a time by inserting each element into its correct position. Excellent for small or nearly sorted arrays.", code:["for i = 1 to n","  key = arr[i]","  j = i - 1","  while j >= 0 and arr[j] > key","    arr[j+1] = arr[j]","    j = j - 1","  arr[j+1] = key"] },
+    merge:     { time:"O(n log n)", best:"O(n log n)",space:"O(n)",       stable:true,  adaptive:false, usesAux:true,  desc:"Divide-and-conquer: recursively splits the array in half, sorts each half, then merges. Guarantees O(n log n) but uses extra memory.",         code:["if l >= r return","m = l + (r - l) / 2","mergeSort(arr, l, m)","mergeSort(arr, m + 1, r)","merge(arr, l, m, r)"] },
+    quick:     { time:"O(n log n)", best:"O(n log n)",space:"O(log n)",   stable:false, adaptive:false, usesAux:false, desc:"Picks a pivot, partitions elements around it, then recursively sorts sub-arrays. Fastest in practice but worst-case O(n²) on sorted input.", code:["if low < high","  pivot = partition(arr, low, high)","  quickSort(arr, low, pivot - 1)","  quickSort(arr, pivot + 1, high)"] },
+    heap:      { time:"O(n log n)", best:"O(n log n)",space:"O(1)",       stable:false, adaptive:false, usesAux:false, desc:"Builds a max-heap, then repeatedly extracts the maximum. Optimal space complexity among O(n log n) algorithms but cache-unfriendly.",         code:["for i = n/2 - 1 down to 0","  heapify(arr, n, i)","for i = n-1 down to 1","  swap(arr[0], arr[i])","  heapify(arr, i, 0)"] },
+    shell:     { time:"O(n log n)", best:"O(n log n)",space:"O(1)",       stable:false, adaptive:true,  usesAux:false, desc:"Generalisation of insertion sort that allows swaps of far-apart elements, reducing the amount of shifting needed.",                            code:["for gap = n/2 down to 1","  for i = gap to n","    temp = arr[i]","    shift elements by gap","    arr[j] = temp"] },
+    radix:     { time:"O(nk)",      best:"O(nk)",     space:"O(n+k)",     stable:true,  adaptive:false, usesAux:true,  desc:"Non-comparison sort. Distributes elements into buckets by individual digits (LSD to MSD). Linear time when k (digit count) is small.",       code:["max = get_max(arr)","for exp = 1 to max/exp > 0","  countingSortByDigit(arr, exp)"] },
+    counting:  { time:"O(n+k)",     best:"O(n+k)",    space:"O(k)",       stable:true,  adaptive:false, usesAux:true,  desc:"Non-comparison sort. Counts occurrences of each value, then reconstructs the sorted array. Fastest for bounded integer ranges.",              code:["count array occurrences","accumulate counts","for each element","  place in correct pos"] },
+    cocktail:  { time:"O(n²)",      best:"O(n)",      space:"O(1)",       stable:true,  adaptive:true,  usesAux:false, desc:"Bidirectional bubble sort — one pass left-to-right, then right-to-left. Slightly more efficient than standard bubble sort in practice.",     code:["while swapped is true","  bubble forward pass","  bubble backward pass"] },
+};
+
+// ═══════════════════════════════════════════════════════════════
+// GLOBAL STATE & NAVIGATION
+// ═══════════════════════════════════════════════════════════════
+let currentArray = [];
+let isSorting = false, isComparing = false, isPaused = false;
+let resolvePause = null;
+const DEFAULT_SIZE = 10;
+let liveComparisons = 0;
+let totalFrames = 0;
+
+// THEME TOGGLE STATE
+let isDarkMode = false; // Initially light based on your root colors
+
+function toggleTheme() {
+    isDarkMode = !isDarkMode;
+    if (isDarkMode) {
+        document.body.classList.add('theme-dark');
+        document.getElementById('theme-toggle').innerText = '🌙';
+    } else {
+        document.body.classList.remove('theme-dark');
+        document.getElementById('theme-toggle').innerText = '☀️';
+    }
+}
+
+function switchTab(tabId) {
+    isComparing = false; isSorting = false; resetControls(); ddPause(); pfStop(); dslPause();
+    document.querySelectorAll('.container').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+    document.getElementById(`${tabId}-tab`).classList.add('active');
+    event.target.classList.add('active');
+    
+    // We no longer force themes here so the manual toggle persists across all tabs.
+    if (tabId === 'deepdive') {
+        initDeepDive();
+    } else if (tabId === 'pathfind') {
+        initPfGrid();
+        updatePfAlgoInfo();
+    } else if (tabId === 'custom') {
+        dslInitIfEmpty();
+    } else if (tabId === 'library') {
+        libInitIfEmpty();
+    } else {
+        if (tabId === 'visualize') updateCodeView();
+    }
+}
+
+function togglePause() {
+    if (!isSorting && !isComparing) return;
+    isPaused = !isPaused;
+    const btn = document.getElementById('btn-pause');
+    btn.innerText = isPaused ? "Resume" : "Pause";
+    btn.classList.toggle('active-state', isPaused);
+    if (!isPaused && resolvePause) { resolvePause(); resolvePause = null; }
+}
+
+function stepForward() {
+    if (!isSorting && !isComparing) return;
+    if (!isPaused) {
+        isPaused = true;
+        document.getElementById('btn-pause').innerText = "Resume";
+        document.getElementById('btn-pause').classList.add('active-state');
+    } else if (resolvePause) { resolvePause(); resolvePause = null; }
+}
+
+async function checkPause() { if (isPaused) { await new Promise(r => resolvePause = r); } }
+
+function resetControls() {
+    isPaused = false;
+    if (resolvePause) resolvePause(); resolvePause = null;
+    const btn = document.getElementById('btn-pause');
+    btn.innerText = "Pause"; btn.classList.remove('active-state');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ALGO INFO CARD
+// ═══════════════════════════════════════════════════════════════
+function renderAlgoInfoCard(algoKey) {
+    const d = algoData[algoKey];
+    const name = document.getElementById('algo-select').options[document.getElementById('algo-select').selectedIndex].text;
+    const tc = (c) => c.includes('n²') ? 'badge-red' : (c.includes('log') || c.includes('nk') || c.includes('n+')) ? 'badge-yellow' : 'badge-green';
+    document.getElementById('algo-info-card').innerHTML = `
+        <h4>${name} <span class="stable-tag ${d.stable ? 'stable-yes' : 'stable-no'}">${d.stable ? 'Stable' : 'Unstable'}</span></h4>
+        <table class="complexity-table">
+            <tr><th>Case</th><th>Time</th><th>Space</th></tr>
+            <tr><td>Worst</td><td class="badge ${tc(d.time)}">${d.time}</td><td class="badge badge-yellow" rowspan="3">${d.space}</td></tr>
+            <tr><td>Average</td><td class="badge ${tc(d.time)}">${d.time}</td></tr>
+            <tr><td>Best</td><td class="badge ${tc(d.best)}">${d.best}</td></tr>
+        </table>
+        <p class="algo-desc">${d.desc}</p>
+    `;
+    
+    // Toggle heap visualizer visibility based on whether algo uses auxiliary memory
+    const heapWrap = document.getElementById('heap-wrap');
+    if (d.usesAux) {
+        heapWrap.classList.add('active');
+        document.getElementById('heap-badge').innerText = d.space + ' space';
+        document.getElementById('heap-slots').innerHTML = '';
+        document.getElementById('heap-note').innerText = 'Watch temporary buffers fill as the algorithm copies data out of the main array.';
+    } else {
+        heapWrap.classList.remove('active');
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LIVE MEMORY HEAP / AUX BUFFER VISUALIZER
+// ═══════════════════════════════════════════════════════════════
+function heapClear() {
+    const slots = document.getElementById('heap-slots');
+    if (slots) slots.innerHTML = '';
+}
+
+function heapRenderBuffer(values, placingIdx) {
+    const slots = document.getElementById('heap-slots');
+    if (!slots) return;
+    slots.innerHTML = '';
+    values.forEach((v, idx) => {
+        const cell = document.createElement('div');
+        if (v === null || v === undefined) {
+            cell.className = 'heap-cell empty-slot'; cell.innerText = '·';
+        } else {
+            cell.className = 'heap-cell' + (idx === placingIdx ? ' placing' : '');
+            cell.innerText = v;
+        }
+        slots.appendChild(cell);
+    });
+}
+
+function heapSetNote(text) {
+    const n = document.getElementById('heap-note');
+    if (n) n.innerText = text;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// COMPLEXITY CANVAS CHART
+// ═══════════════════════════════════════════════════════════════
+let chartData = { labels:[], actual:[], theoretical:[] };
+function resetChart() { chartData = { labels:[], actual:[], theoretical:[] }; drawChart(); }
+
+function pushChartPoint(n, actual) {
+    const algo = document.getElementById('algo-select').value;
+    let th = n * n;
+    if (['merge','quick','heap','shell'].includes(algo)) th = n * Math.log2(Math.max(n,2));
+    if (['radix','counting'].includes(algo)) th = n;
+    chartData.labels.push(n);
+    chartData.actual.push(actual);
+    chartData.theoretical.push(Math.round(th));
+    drawChart();
+}
+
+function drawChart() {
+    const canvas = document.getElementById('complexity-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    canvas.width = canvas.offsetWidth * window.devicePixelRatio || 400;
+    canvas.height = 120 * window.devicePixelRatio || 120;
+    ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+    const W = canvas.offsetWidth || 400, H = 120;
+    ctx.clearRect(0, 0, W, H);
+
+    const all = [...chartData.actual, ...chartData.theoretical];
+    const maxV = Math.max(...all, 1);
+    const pts = chartData.labels.length;
+    if (pts < 1) return;
+
+    const pad = 8;
+    const drawLine = (data, color) => {
+        ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 1.8;
+        data.forEach((v, i) => {
+            const x = pad + (i / Math.max(pts - 1, 1)) * (W - pad * 2);
+            const y = H - pad - (v / maxV) * (H - pad * 2);
+            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+    };
+
+    ctx.strokeStyle = 'rgba(99,102,241,0.08)'; ctx.lineWidth = 0.5;
+    for (let i = 1; i < 4; i++) {
+        const y = pad + (i / 4) * (H - pad * 2);
+        ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(W - pad, y); ctx.stroke();
+    }
+
+    drawLine(chartData.theoretical, 'rgba(107,114,128,0.5)');
+    drawLine(chartData.actual, '#6366f1');
+
+    ctx.font = '10px Inter, sans-serif';
+    ctx.fillStyle = '#6366f1'; ctx.fillText('● actual comps', 10, 12);
+    ctx.fillStyle = 'rgba(107,114,128,0.8)'; ctx.fillText('● theoretical', 110, 12);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CELEBRATION
+// ═══════════════════════════════════════════════════════════════
+function celebrate(algoName) {
+    const overlay = document.getElementById('celebration-overlay');
+    overlay.innerHTML = '<div class="sorted-banner" id="celebration-banner">✓ ' + algoName + ' Done!</div>';
+    const emojis = ['🎉','⚡','✨','🔥','💡'];
+    for (let i = 0; i < 18; i++) {
+        const el = document.createElement('div');
+        el.className = 'celebration-burst';
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 120 + Math.random() * 200;
+        el.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+        el.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+        el.style.left = '50%'; el.style.top = '50%';
+        el.style.animationDelay = (Math.random() * 0.3) + 's';
+        el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+        overlay.appendChild(el);
+    }
+    overlay.classList.add('show');
+    setTimeout(() => { overlay.classList.remove('show'); overlay.innerHTML = ''; }, 2000);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// VISUALIZE TAB ENGINE
+// ═══════════════════════════════════════════════════════════════
+function init() { generateRandom(); updateCodeView(); resetChart(); }
+
+function generateRandom() {
+    if (isSorting) return;
+    currentArray = Array.from({length: DEFAULT_SIZE}, () => Math.floor(Math.random() * 90) + 10);
+    renderVisuals(currentArray, 'bars', 'array-boxes');
+    document.getElementById('live-comps').innerText = "0";
+    document.getElementById('live-swaps').innerText = "0";
+    updateProgress(0, 0, 'Ready');
+    resetChart(); heapClear();
+}
+
+function setCustomArray() {
+    if (isSorting) return;
+    const input = document.getElementById('custom-input').value;
+    const parsed = input.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
+    if (parsed.length > 0 && parsed.length <= 15) {
+        currentArray = parsed;
+        renderVisuals(currentArray, 'bars', 'array-boxes');
+        document.getElementById('live-comps').innerText = "0";
+        document.getElementById('live-swaps').innerText = "0";
+        updateProgress(0, 0, 'Ready');
+        resetChart(); heapClear();
+    } else { alert("Please enter up to 15 valid numbers separated by commas."); }
+}
+
+function renderVisuals(arr, barContainerId, boxContainerId = null) {
+    const barContainer = document.getElementById(barContainerId);
+    barContainer.innerHTML = '';
+    barContainer.style.gap = arr.length > 30 ? '0px' : '4px';
+    const maxVal = Math.max(...arr, 100);
+    let arrayContainer = boxContainerId ? document.getElementById(boxContainerId) : null;
+    if (arrayContainer) arrayContainer.innerHTML = '';
+    arr.forEach((val, idx) => {
+        const bar = document.createElement('div');
+        bar.className = 'bar'; bar.style.height = `${(val / maxVal) * 100}%`; bar.id = `${barContainerId}-${idx}`;
+        barContainer.appendChild(bar);
+        if (arrayContainer && arr.length <= 15) {
+            const box = document.createElement('div');
+            box.className = 'array-box'; box.innerText = val; box.id = `box-${idx}`;
+            arrayContainer.appendChild(box);
+        }
+    });
+}
+
+function updateCodeView() {
+    const algo = document.getElementById('algo-select').value;
+    const data = algoData[algo];
+    document.getElementById('code-view').innerHTML = data.code.map((line, idx) => `<div class="code-line" id="code-${idx}">${line}</div>`).join('');
+    document.getElementById('benchmark-result').innerText = "";
+    renderAlgoInfoCard(algo);
+    resetChart(); heapClear();
+}
+
+function updateProgress(current, total, label) {
+    const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+    document.getElementById('sort-progress-fill').style.width = pct + '%';
+    document.getElementById('progress-pct').innerText = pct + '%';
+    document.getElementById('progress-label-text').innerText = label || 'Running…';
+}
+
+function getBubbleSortFrames(arr) { let frames=[]; let temp=[...arr]; for(let i=0;i<temp.length-1;i++){ frames.push({type:'highlight',codeLine:0}); for(let j=0;j<temp.length-i-1;j++){ frames.push({type:'compare',indices:[j,j+1],codeLine:2}); if(temp[j]>temp[j+1]){ frames.push({type:'swap',indices:[j,j+1],codeLine:3}); [temp[j],temp[j+1]]=[temp[j+1],temp[j]]; } } } return frames; }
+function getSelectionSortFrames(arr) { let frames=[]; let temp=[...arr]; for(let i=0;i<temp.length-1;i++){ let m=i; frames.push({type:'highlight',codeLine:1}); for(let j=i+1;j<temp.length;j++){ frames.push({type:'compare',indices:[m,j],codeLine:3}); if(temp[j]<temp[m]){ m=j; frames.push({type:'highlight',codeLine:4}); } } frames.push({type:'swap',indices:[m,i],codeLine:5}); [temp[m],temp[i]]=[temp[i],temp[m]]; } return frames; }
+function getInsertionSortFrames(arr) { let frames=[]; let temp=[...arr]; for(let i=1;i<temp.length;i++){ let key=temp[i]; let j=i-1; frames.push({type:'highlight',codeLine:1}); while(j>=0 && temp[j]>key){ frames.push({type:'compare',indices:[j,j+1],codeLine:3}); frames.push({type:'swap',indices:[j,j+1],codeLine:4}); temp[j+1]=temp[j]; j--; } temp[j+1]=key; } return frames; }
+function getMergeSortFrames(arr) { let frames=[]; let temp=[...arr]; let max=Math.max(...arr,100); function merge(l,m,r){ let L=temp.slice(l,m+1), R=temp.slice(m+1,r+1); let i=0,j=0,k=l; while(i<L.length && j<R.length){ frames.push({type:'compare',indices:[l+i,m+1+j],codeLine:4}); if(L[i]<=R[j]){ temp[k]=L[i]; frames.push({type:'overwrite',indices:[k,L[i],max],codeLine:4}); i++; }else{ temp[k]=R[j]; frames.push({type:'overwrite',indices:[k,R[j],max],codeLine:4}); j++; } k++; } while(i<L.length){ temp[k]=L[i]; frames.push({type:'overwrite',indices:[k,L[i],max],codeLine:4}); i++;k++; } while(j<R.length){ temp[k]=R[j]; frames.push({type:'overwrite',indices:[k,R[j],max],codeLine:4}); j++;k++; } } function mergeSort(l,r){ if(l>=r)return; let m=l+Math.floor((r-l)/2); frames.push({type:'highlight',codeLine:1}); mergeSort(l,m); mergeSort(m+1,r); merge(l,m,r); } mergeSort(0,temp.length-1); return frames; }
+function getQuickSortFrames(arr) { let frames=[]; let temp=[...arr]; function qSort(low,high){ if(low<high){ frames.push({type:'highlight',codeLine:0}); let pivot=temp[high]; let i=low-1; for(let j=low;j<high;j++){ frames.push({type:'compare',indices:[j,high],codeLine:1}); if(temp[j]<pivot){ i++; frames.push({type:'swap',indices:[i,j],codeLine:1}); [temp[i],temp[j]]=[temp[j],temp[i]]; } } frames.push({type:'swap',indices:[i+1,high],codeLine:1}); [temp[i+1],temp[high]]=[temp[high],temp[i+1]]; let pi=i+1; qSort(low,pi-1); qSort(pi+1,high); } } qSort(0,temp.length-1); return frames; }
+function getHeapSortFrames(arr) { let frames=[]; let temp=[...arr]; function heapify(n,i){ let l=2*i+1, r=2*i+2, m=i; if(l<n){ frames.push({type:'compare',indices:[l,m],codeLine:1}); if(temp[l]>temp[m]) m=l; } if(r<n){ frames.push({type:'compare',indices:[r,m],codeLine:1}); if(temp[r]>temp[m]) m=r; } if(m!=i){ frames.push({type:'swap',indices:[i,m],codeLine:1}); [temp[i],temp[m]]=[temp[m],temp[i]]; heapify(n,m); } } for(let i=Math.floor(temp.length/2)-1;i>=0;i--) heapify(temp.length,i); for(let i=temp.length-1;i>0;i--){ frames.push({type:'swap',indices:[0,i],codeLine:3}); [temp[0],temp[i]]=[temp[i],temp[0]]; heapify(i,0); } return frames; }
+function getShellSortFrames(arr) { let frames=[]; let temp=[...arr]; let n=temp.length; for(let gap=Math.floor(n/2);gap>0;gap=Math.floor(gap/2)){ frames.push({type:'highlight',codeLine:0}); for(let i=gap;i<n;i+=1){ let t=temp[i]; let j; for(j=i;j>=gap;j-=gap){ frames.push({type:'compare',indices:[j-gap,i],codeLine:2}); if(temp[j-gap]>t){ frames.push({type:'overwrite',indices:[j,temp[j-gap],Math.max(...arr,100)],codeLine:3}); temp[j]=temp[j-gap]; }else{break;} } frames.push({type:'overwrite',indices:[j,t,Math.max(...arr,100)],codeLine:4}); temp[j]=t; } } return frames; }
+function getCountingSortFrames(arr) { let frames=[]; let temp=[...arr]; let max=Math.max(...temp), min=Math.min(...temp); let count=new Array(max-min+1).fill(0); let maxVal=Math.max(...arr,100); for(let i=0;i<temp.length;i++){ frames.push({type:'highlight',codeLine:0}); count[temp[i]-min]++; } let z=0; for(let i=min;i<=max;i++){ while(count[i-min]>0){ frames.push({type:'overwrite',indices:[z,i,maxVal],codeLine:3}); temp[z]=i; z++; count[i-min]--; } } return frames; }
+function getRadixSortFrames(arr) { let frames=[]; let temp=[...arr]; let maxVal=Math.max(...arr,100), max=Math.max(...temp); for(let exp=1;Math.floor(max/exp)>0;exp*=10){ frames.push({type:'highlight',codeLine:1}); let out=new Array(temp.length), count=new Array(10).fill(0); for(let i=0;i<temp.length;i++) count[Math.floor(temp[i]/exp)%10]++; for(let i=1;i<10;i++) count[i]+=count[i-1]; for(let i=temp.length-1;i>=0;i--){ out[count[Math.floor(temp[i]/exp)%10]-1]=temp[i]; count[Math.floor(temp[i]/exp)%10]--; } for(let i=0;i<temp.length;i++){ frames.push({type:'overwrite',indices:[i,out[i],maxVal],codeLine:2}); temp[i]=out[i]; } } return frames; }
+function getCocktailFrames(arr) { let frames=[]; let temp=[...arr]; let swapped=true; let start=0; let end=temp.length-1; while(swapped){ swapped=false; for(let i=start;i<end;++i){ frames.push({type:'compare',indices:[i,i+1],codeLine:1}); if(temp[i]>temp[i+1]){ frames.push({type:'swap',indices:[i,i+1],codeLine:1}); [temp[i],temp[i+1]]=[temp[i+1],temp[i]]; swapped=true; } } if(!swapped) break; swapped=false; end=end-1; for(let i=end-1;i>=start;--i){ frames.push({type:'compare',indices:[i,i+1],codeLine:3}); if(temp[i]>temp[i+1]){ frames.push({type:'swap',indices:[i,i+1],codeLine:3}); [temp[i],temp[i+1]]=[temp[i+1],temp[i]]; swapped=true; } } start=start+1; } return frames; }
+
+function getAlgoFrames(algo, arr) {
+    switch(algo) {
+        case 'bubble': return getBubbleSortFrames(arr); case 'selection': return getSelectionSortFrames(arr);
+        case 'insertion': return getInsertionSortFrames(arr); case 'merge': return getMergeSortFrames(arr);
+        case 'quick': return getQuickSortFrames(arr); case 'heap': return getHeapSortFrames(arr);
+        case 'shell': return getShellSortFrames(arr); case 'radix': return getRadixSortFrames(arr);
+        case 'counting': return getCountingSortFrames(arr); case 'cocktail': return getCocktailFrames(arr);
+        default: return getBubbleSortFrames(arr);
+    }
+}
+
+async function startSort() {
+    if (isSorting) return;
+    isSorting = true; resetControls();
+    liveComparisons = 0;
+    let comps = 0, swaps = 0;
+    const compUI = document.getElementById('live-comps'), swapUI = document.getElementById('live-swaps');
+    compUI.innerText = "0"; swapUI.innerText = "0";
+    resetChart(); heapClear();
+
+    const algoKey = document.getElementById('algo-select').value;
+    const algoName = document.getElementById('algo-select').options[document.getElementById('algo-select').selectedIndex].text;
+    let frames = getAlgoFrames(algoKey, currentArray);
+    totalFrames = frames.length;
+    let activeBars = [];
+    const sampleEvery = Math.max(1, Math.floor(frames.length / 20));
+
+    for (let i = 0; i < frames.length; i++) {
+        await checkPause();
+        if (!isSorting) return;
+        let speedFactor = parseInt(document.getElementById('global-speed').value);
+        let delay = 1010 - speedFactor * 10;
+        const frame = frames[i];
+
+        if (frame.type === 'heap') {
+            heapRenderBuffer(frame.buf, frame.placing);
+            heapSetNote(frame.note);
+            updateProgress(i + 1, frames.length, algoName);
+            await new Promise(resolve => setTimeout(resolve, delay * 0.6));
+            continue;
+        }
+
+        document.querySelectorAll('.code-line').forEach(l => l.classList.remove('active'));
+        activeBars.forEach(id => {
+            const b = document.getElementById(id); if (b) b.style.backgroundColor = '';
+            const box = document.getElementById(`box-${id.split('-').pop()}`); if (box) box.style.borderColor = 'var(--border-color)';
+        });
+        activeBars = [];
+
+        if (frame.codeLine !== undefined) {
+            const codeEl = document.getElementById(`code-${frame.codeLine}`);
+            if (codeEl) codeEl.classList.add('active');
+        }
+
+        if (frame.type === 'compare') {
+            comps++; liveComparisons = comps; compUI.innerText = comps;
+            const [i1, i2] = frame.indices;
+            document.getElementById(`bars-${i1}`).style.background = 'var(--bar-compare)';
+            document.getElementById(`bars-${i2}`).style.background = 'var(--bar-compare)';
+            const b1 = document.getElementById(`box-${i1}`), b2 = document.getElementById(`box-${i2}`);
+            if (b1) b1.style.borderColor = 'var(--bar-compare)'; if (b2) b2.style.borderColor = 'var(--bar-compare)';
+            activeBars.push(`bars-${i1}`, `bars-${i2}`);
+        } else if (frame.type === 'swap') {
+            swaps++; swapUI.innerText = swaps;
+            const [i1, i2] = frame.indices;
+            const bar1 = document.getElementById(`bars-${i1}`), bar2 = document.getElementById(`bars-${i2}`);
+            const box1 = document.getElementById(`box-${i1}`), box2 = document.getElementById(`box-${i2}`);
+            bar1.style.background = 'var(--bar-active)'; bar2.style.background = 'var(--bar-active)';
+            let tempH = bar1.style.height; bar1.style.height = bar2.style.height; bar2.style.height = tempH;
+            if (box1 && box2) { let tempT = box1.innerText; box1.innerText = box2.innerText; box2.innerText = tempT; }
+            let tempV = currentArray[i1]; currentArray[i1] = currentArray[i2]; currentArray[i2] = tempV;
+            activeBars.push(`bars-${i1}`, `bars-${i2}`);
+        } else if (frame.type === 'overwrite') {
+            swaps++; swapUI.innerText = swaps;
+            const [idx, val, maxVal] = frame.indices;
+            const bar = document.getElementById(`bars-${idx}`), box = document.getElementById(`box-${idx}`);
+            if (bar) { bar.style.background = 'var(--bar-active)'; bar.style.height = `${(val / maxVal) * 100}%`; activeBars.push(`bars-${idx}`); }
+            if (box) { box.innerText = val; box.style.borderColor = 'var(--bar-active)'; }
+            currentArray[idx] = val;
+        }
+
+        updateProgress(i + 1, frames.length, algoName);
+        if (i % sampleEvery === 0) pushChartPoint(i + 1, comps);
+        await new Promise(resolve => setTimeout(resolve, delay));
+    }
+
+    document.querySelectorAll(`.bar`).forEach(b => b.style.background = 'var(--bar-active)');
+    updateProgress(frames.length, frames.length, 'Sorted!');
+    pushChartPoint(frames.length, comps);
+    isSorting = false; resetControls();
+    celebrate(algoName);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// COMPARE TAB ENGINE 
+// ═══════════════════════════════════════════════════════════════
+async function animateCompare(frames, containerId, timeId, statsId, arraySize) {
+    const startTime = performance.now();
+    let comps = 0, swaps = 0; const statsUI = document.getElementById(statsId);
+    let activeBars = [];
+    for (let i = 0; i < frames.length; i++) {
+        await checkPause(); if (!isComparing) return;
+        if (frames[i].type === 'heap') continue;
+        let speedFactor = parseInt(document.getElementById('global-speed').value);
+        let scale = arraySize > 100 ? 0.05 : (arraySize > 40 ? 0.2 : 1);
+        let delay = (1010 - speedFactor * 10) * scale;
+        const frame = frames[i];
+        activeBars.forEach(id => { let el = document.getElementById(id); if (el) el.style.background = ''; });
+        activeBars = [];
+        if (frame.type === 'compare') {
+            comps++; statsUI.innerText = `Comps: ${comps} | Swaps: ${swaps}`;
+            const [i1, i2] = frame.indices;
+            const bar1 = document.getElementById(`${containerId}-${i1}`), bar2 = document.getElementById(`${containerId}-${i2}`);
+            if (bar1) { bar1.style.background = 'var(--bar-compare)'; activeBars.push(`${containerId}-${i1}`); }
+            if (bar2) { bar2.style.background = 'var(--bar-compare)'; activeBars.push(`${containerId}-${i2}`); }
+        } else if (frame.type === 'swap') {
+            swaps++; statsUI.innerText = `Comps: ${comps} | Swaps: ${swaps}`;
+            const [i1, i2] = frame.indices;
+            const bar1 = document.getElementById(`${containerId}-${i1}`), bar2 = document.getElementById(`${containerId}-${i2}`);
+            if (bar1 && bar2) {
+                bar1.style.background = 'var(--bar-active)'; bar2.style.background = 'var(--bar-active)';
+                let temp = bar1.style.height; bar1.style.height = bar2.style.height; bar2.style.height = temp;
+                activeBars.push(`${containerId}-${i1}`, `${containerId}-${i2}`);
+            }
+        } else if (frame.type === 'overwrite') {
+            swaps++; statsUI.innerText = `Comps: ${comps} | Swaps: ${swaps}`;
+            const [idx, val, maxVal] = frame.indices;
+            const bar = document.getElementById(`${containerId}-${idx}`);
+            if (bar) { bar.style.background = 'var(--bar-active)'; bar.style.height = `${(val / maxVal) * 100}%`; activeBars.push(`${containerId}-${idx}`); }
+        }
+        await new Promise(r => setTimeout(r, delay));
+    }
+    document.querySelectorAll(`#${containerId} .bar`).forEach(b => b.style.background = 'var(--bar-active)');
+    document.getElementById(timeId).innerText = `${(performance.now() - startTime).toFixed(2)} ms`;
+}
+
+async function runCompare() {
+    if (isComparing) return;
+    isComparing = true; resetControls();
+    const size = parseInt(document.getElementById('compare-size').value);
+    document.getElementById('compare-time-1').innerText = "Sorting..."; document.getElementById('compare-time-2').innerText = "Sorting...";
+    const cmpArray = Array.from({length: size}, () => Math.floor(Math.random() * 90) + 10);
+    renderVisuals([...cmpArray], 'bars-compare-1'); renderVisuals([...cmpArray], 'bars-compare-2');
+    let f1 = getAlgoFrames(document.getElementById('compare-algo-1').value, [...cmpArray]);
+    let f2 = getAlgoFrames(document.getElementById('compare-algo-2').value, [...cmpArray]);
+    await Promise.all([
+        animateCompare(f1, 'bars-compare-1', 'compare-time-1', 'compare-stats-1', size),
+        animateCompare(f2, 'bars-compare-2', 'compare-time-2', 'compare-stats-2', size)
+    ]);
+    isComparing = false; resetControls();
+}
+
+function runBenchmark() {
+    const resDiv = document.getElementById('benchmark-result'); resDiv.innerText = "Simulating run...";
+    setTimeout(() => {
+        let n = parseInt(document.getElementById('benchmark-size').value);
+        let str = document.getElementById('algo-select').value;
+        let t = (n*n)*0.0001;
+        if (['merge','quick','heap','shell'].includes(str)) t = n*Math.log2(n)*0.0005;
+        if (['radix','counting'].includes(str)) t = n * 0.0002;
+        resDiv.innerText = `Completed in ~${t.toFixed(3)} ms`;
+    }, 500);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DEEP DIVE ENGINE 
+// ═══════════════════════════════════════════════════════════════
+let ddState = { originalArray: [], frames: [], currentFrameIdx: 0, isPlaying: false, timer: null };
+
+function generateDDBubbleFrames(arr) { let frames=[]; let temp=[...arr]; frames.push({line:0,arr:[...temp],vars:{},insight:"Starting Bubble Sort. Array is initially completely unsorted."}); for(let i=0;i<temp.length-1;i++){ for(let j=0;j<temp.length-i-1;j++){ frames.push({line:2,arr:[...temp],vars:{i,j},active:[j,j+1],insight:`Comparing index j (${temp[j]}) and j+1 (${temp[j+1]}).`}); if(temp[j]>temp[j+1]){ frames.push({line:3,arr:[...temp],vars:{i,j},swap:[j,j+1],insight:`Since ${temp[j]} > ${temp[j+1]}, a swap occurs.`}); [temp[j],temp[j+1]]=[temp[j+1],temp[j]]; } } frames.push({line:0,arr:[...temp],vars:{i},insight:`Pass ${i+1} done. Element ${temp[temp.length-1-i]} is locked in position.`}); } frames.push({line:null,arr:[...temp],vars:{},complete:true,insight:"Bubble Sort complete!"}); return frames; }
+function generateDDSelectionFrames(arr) { let frames=[]; let temp=[...arr]; frames.push({line:0,arr:[...temp],vars:{},insight:"Initializing Selection Sort."}); for(let i=0;i<temp.length-1;i++){ let min_idx=i; frames.push({line:1,arr:[...temp],vars:{i,min:min_idx},insight:`Assume minimum is at index ${i}, value: ${temp[i]}.`}); for(let j=i+1;j<temp.length;j++){ frames.push({line:3,arr:[...temp],vars:{i,min:min_idx,j},active:[min_idx,j],insight:`Checking if ${temp[j]} < current min ${temp[min_idx]}.`}); if(temp[j]<temp[min_idx]){ min_idx=j; frames.push({line:4,arr:[...temp],vars:{i,min:min_idx,j},insight:`New minimum found at index ${j}.`}); } } if(min_idx!==i){ frames.push({line:5,arr:[...temp],vars:{i,min:min_idx},swap:[i,min_idx],insight:`Swapping ${temp[i]} with minimum ${temp[min_idx]}.`}); [temp[min_idx],temp[i]]=[temp[i],temp[min_idx]]; } } frames.push({line:null,arr:[...temp],vars:{},complete:true,insight:"Selection Sort complete!"}); return frames; }
+function generateDDInsertionFrames(arr) { let frames=[]; let temp=[...arr]; frames.push({line:0,arr:[...temp],vars:{},insight:"Starting Insertion Sort."}); for(let i=1;i<temp.length;i++){ let key=temp[i]; let j=i-1; frames.push({line:1,arr:[...temp],vars:{i,key,j},active:[i],insight:`Picking value ${key} at index ${i} as key.`}); while(j>=0&&temp[j]>key){ frames.push({line:4,arr:[...temp],vars:{i,key,j},swap:[j,j+1],insight:`${temp[j]} > ${key}, shift right to index ${j+1}.`}); temp[j+1]=temp[j]; j=j-1; } frames.push({line:6,arr:[...temp],vars:{i,key,j},insight:`Drop key ${key} into position ${j+1}.`}); temp[j+1]=key; } frames.push({line:null,arr:[...temp],vars:{},complete:true,insight:"Insertion Sort complete!"}); return frames; }
+function generateDDMergeFrames(arr) { let frames=[]; let temp=[...arr]; frames.push({line:0,arr:[...temp],vars:{},insight:"Initializing Merge Sort."}); function mergeSortSlice(l,r){ if(l>=r)return; let m=l+Math.floor((r-l)/2); frames.push({line:1,arr:[...temp],vars:{left:l,right:r},insight:`Splitting [${l}..${r}] at midpoint ${m}.`}); mergeSortSlice(l,m); mergeSortSlice(m+1,r); let L=temp.slice(l,m+1),R=temp.slice(m+1,r+1); let i=0,j=0,k=l; while(i<L.length&&j<R.length){ frames.push({line:4,arr:[...temp],vars:{left:l,right:r},active:[k],insight:`Comparing ${L[i]} vs ${R[j]}.`}); if(L[i]<=R[j]){ temp[k]=L[i]; i++; }else{ temp[k]=R[j]; j++; } k++; } while(i<L.length){temp[k]=L[i];i++;k++;} while(j<R.length){temp[k]=R[j];j++;k++;} frames.push({line:4,arr:[...temp],vars:{left:l,right:r},insight:`Merged [${l}..${r}].`}); } mergeSortSlice(0,temp.length-1); frames.push({line:null,arr:[...temp],vars:{},complete:true,insight:"Merge Sort complete!"}); return frames; }
+function generateDDQuickFrames(arr) { let frames=[]; let temp=[...arr]; function quickSortSlice(low,high){ if(low<high){ let pivot=temp[high]; let i=low-1; frames.push({line:1,arr:[...temp],vars:{left:low,right:high},active:[high],insight:`Pivot selected: ${pivot} at index ${high}.`}); for(let j=low;j<high;j++){ frames.push({line:1,arr:[...temp],vars:{left:low,right:high,j},active:[j,high],insight:`Comparing ${temp[j]} against pivot ${pivot}.`}); if(temp[j]<pivot){ i++; frames.push({line:1,arr:[...temp],vars:{left:low,right:high,i,j},swap:[i,j],insight:`${temp[j]} < pivot; swap indices ${i} and ${j}.`}); [temp[i],temp[j]]=[temp[j],temp[i]]; } } frames.push({line:1,arr:[...temp],vars:{left:low,right:high,i:i+1},swap:[i+1,high],insight:`Place pivot at final position ${i+1}.`}); [temp[i+1],temp[high]]=[temp[high],temp[i+1]]; let pi=i+1; quickSortSlice(low,pi-1); quickSortSlice(pi+1,high); } } quickSortSlice(0,temp.length-1); frames.push({line:null,arr:[...temp],vars:{},complete:true,insight:"Quick Sort complete!"}); return frames; }
+function generateDDHeapFrames(arr) { let frames=[]; let temp=[...arr]; frames.push({line:0,arr:[...temp],vars:{},insight:"Building Max-Heap."}); function heapify(n,i){ let largest=i; let l=2*i+1; let r=2*i+2; if(l<n&&temp[l]>temp[largest])largest=l; if(r<n&&temp[r]>temp[largest])largest=r; if(largest!=i){ frames.push({line:1,arr:[...temp],vars:{i,max:largest},swap:[i,largest],insight:`Swap index ${i} with child ${largest}.`}); [temp[i],temp[largest]]=[temp[largest],temp[i]]; heapify(n,largest); } } for(let i=Math.floor(temp.length/2)-1;i>=0;i--)heapify(temp.length,i); frames.push({line:2,arr:[...temp],vars:{},insight:"Max-Heap built. Extracting elements."}); for(let i=temp.length-1;i>0;i--){ frames.push({line:3,arr:[...temp],vars:{i},swap:[0,i],insight:`Extract max (${temp[0]}) to position ${i}.`}); [temp[0],temp[i]]=[temp[i],temp[0]]; heapify(i,0); } frames.push({line:null,arr:[...temp],vars:{},complete:true,insight:"Heap Sort complete!"}); return frames; }
+function generateDDShellFrames(arr) { let frames=[]; let temp=[...arr]; let n=temp.length; frames.push({line:0,arr:[...temp],vars:{},insight:"Initializing Shell Sort."}); for(let gap=Math.floor(n/2);gap>0;gap=Math.floor(gap/2)){ frames.push({line:0,arr:[...temp],vars:{gap},insight:`Gap = ${gap}.`}); for(let i=gap;i<n;i++){ let t=temp[i]; let j=i; frames.push({line:2,arr:[...temp],vars:{gap,i,j},active:[j,j-gap],insight:`Compare gap-apart elements.`}); while(j>=gap&&temp[j-gap]>t){ frames.push({line:3,arr:[...temp],vars:{gap,i,j},swap:[j,j-gap],insight:`Shift ${temp[j-gap]} forward.`}); temp[j]=temp[j-gap]; j-=gap; } temp[j]=t; } } frames.push({line:null,arr:[...temp],vars:{},complete:true,insight:"Shell Sort complete!"}); return frames; }
+function generateDDRadixFrames(arr) { let frames=[]; let temp=[...arr]; let max=Math.max(...temp); frames.push({line:0,arr:[...temp],vars:{},insight:"Starting Radix Sort (LSD)."}); for(let exp=1;Math.floor(max/exp)>0;exp*=10){ frames.push({line:1,arr:[...temp],vars:{},insight:`Sorting by digit at position 10^${Math.log10(exp)}.`}); let out=new Array(temp.length); let count=new Array(10).fill(0); for(let i=0;i<temp.length;i++)count[Math.floor(temp[i]/exp)%10]++; for(let i=1;i<10;i++)count[i]+=count[i-1]; for(let i=temp.length-1;i>=0;i--){out[count[Math.floor(temp[i]/exp)%10]-1]=temp[i];count[Math.floor(temp[i]/exp)%10]--;} for(let i=0;i<temp.length;i++){temp[i]=out[i]; frames.push({line:2,arr:[...temp],vars:{i},active:[i],insight:`Placed value at index ${i}.`});} } frames.push({line:null,arr:[...temp],vars:{},complete:true,insight:"Radix Sort complete!"}); return frames; }
+function generateDDCountingFrames(arr) { let frames=[]; let temp=[...arr]; let max=Math.max(...temp),min=Math.min(...temp); frames.push({line:0,arr:[...temp],vars:{},insight:"Starting Counting Sort."}); let count=new Array(max-min+1).fill(0); for(let i=0;i<temp.length;i++){count[temp[i]-min]++; frames.push({line:0,arr:[...temp],vars:{i},active:[i],insight:`Counted value ${temp[i]}.`});} let z=0; for(let i=min;i<=max;i++){while(count[i-min]>0){temp[z]=i; frames.push({line:3,arr:[...temp],vars:{i:z},active:[z],insight:`Writing ${i} at index ${z}.`}); z++;count[i-min]--;}} frames.push({line:null,arr:[...temp],vars:{},complete:true,insight:"Counting Sort complete!"}); return frames; }
+function generateDDCocktailFrames(arr) { let frames=[]; let temp=[...arr]; let swapped=true; let start=0; let end=temp.length-1; frames.push({line:0,arr:[...temp],vars:{},insight:"Starting Cocktail Shaker Sort."}); while(swapped){ swapped=false; frames.push({line:1,arr:[...temp],vars:{left:start,right:end},insight:"Forward pass."}); for(let i=start;i<end;++i){ frames.push({line:1,arr:[...temp],vars:{left:start,right:end,i},active:[i,i+1],insight:`Compare indices ${i} and ${i+1}.`}); if(temp[i]>temp[i+1]){frames.push({line:1,arr:[...temp],vars:{left:start,right:end,i},swap:[i,i+1],insight:`Swap ${temp[i]} and ${temp[i+1]}.`});[temp[i],temp[i+1]]=[temp[i+1],temp[i]];swapped=true;} } if(!swapped)break; swapped=false;end--; frames.push({line:3,arr:[...temp],vars:{left:start,right:end},insight:"Backward pass."}); for(let i=end-1;i>=start;--i){ frames.push({line:3,arr:[...temp],vars:{left:start,right:end,i},active:[i,i+1],insight:`Compare indices ${i} and ${i+1}.`}); if(temp[i]>temp[i+1]){frames.push({line:3,arr:[...temp],vars:{left:start,right:end,i},swap:[i,i+1],insight:`Swap ${temp[i]} and ${temp[i+1]}.`});[temp[i],temp[i+1]]=[temp[i+1],temp[i]];swapped=true;} } start++; } frames.push({line:null,arr:[...temp],vars:{},complete:true,insight:"Cocktail Shaker Sort complete!"}); return frames; }
+
+function initDeepDive() {
+    ddPause();
+    const inputStr = document.getElementById('dd-input').value;
+    const parsed = inputStr.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
+    if (parsed.length > 0 && parsed.length <= 12) ddState.originalArray = parsed;
+    else { alert("Please enter 2 to 12 valid numbers."); return; }
+    const algo = document.getElementById('dd-algo').value;
+    switch(algo) {
+        case 'bubble': ddState.frames=generateDDBubbleFrames(ddState.originalArray); break;
+        case 'selection': ddState.frames=generateDDSelectionFrames(ddState.originalArray); break;
+        case 'insertion': ddState.frames=generateDDInsertionFrames(ddState.originalArray); break;
+        case 'merge': ddState.frames=generateDDMergeFrames(ddState.originalArray); break;
+        case 'quick': ddState.frames=generateDDQuickFrames(ddState.originalArray); break;
+        case 'heap': ddState.frames=generateDDHeapFrames(ddState.originalArray); break;
+        case 'shell': ddState.frames=generateDDShellFrames(ddState.originalArray); break;
+        case 'radix': ddState.frames=generateDDRadixFrames(ddState.originalArray); break;
+        case 'counting': ddState.frames=generateDDCountingFrames(ddState.originalArray); break;
+        case 'cocktail': ddState.frames=generateDDCocktailFrames(ddState.originalArray); break;
+    }
+    ddState.currentFrameIdx = 0; renderDDCode(algo); renderDDFrame();
+}
+
+function renderDDCode(algo) {
+    const data = algoData[algo];
+    document.getElementById('dd-code-view').innerHTML = data.code.map((line, idx) => `<div class="dd-line" id="dd-code-${idx}">${line}</div>`).join('');
+}
+
+function renderDDFrame() {
+    const frame = ddState.frames[ddState.currentFrameIdx];
+    if (!frame) return;
+    document.querySelectorAll('.dd-line').forEach(l => l.classList.remove('active'));
+    if (frame.line !== null) {
+        const activeLine = document.getElementById(`dd-code-${frame.line}`);
+        if (activeLine) activeLine.classList.add('active');
+    }
+    document.getElementById('dd-insight').innerHTML = frame.insight || "Processing…";
+    const container = document.getElementById('dd-slots'); container.innerHTML = '';
+    frame.arr.forEach((val, idx) => {
+        const slot = document.createElement('div'); slot.className = 'dd-slot';
+        const box = document.createElement('div'); box.className = 'dd-box'; box.innerText = val;
+        if (frame.active && frame.active.includes(idx)) box.classList.add('highlight');
+        if (frame.swap && frame.swap.includes(idx)) box.classList.add('swap');
+        if (frame.complete) { box.style.borderColor = 'var(--bar-active)'; box.style.background = 'rgba(20,184,166,0.12)'; }
+        const ptrContainer = document.createElement('div'); ptrContainer.className = 'dd-pointers';
+        for (const [varName, varIdx] of Object.entries(frame.vars)) {
+            if (varIdx === idx && varName !== 'key') {
+                const ptr = document.createElement('span'); ptr.className = `ptr ptr-${varName}`; ptr.innerText = `↑ ${varName}`;
+                ptrContainer.appendChild(ptr);
+            }
+        }
+        slot.appendChild(box); slot.appendChild(ptrContainer); container.appendChild(slot);
+    });
+    if (frame.vars.key !== undefined) {
+        const keyInfo = document.createElement('div');
+        keyInfo.style.width = '100%'; keyInfo.style.textAlign = 'center'; keyInfo.style.marginTop = '20px';
+        keyInfo.innerHTML = `<span class="ptr ptr-key" style="font-size:1.1rem;padding:5px 15px;">Key = ${frame.vars.key}</span>`;
+        container.appendChild(keyInfo);
+    }
+    
+    // Update DD progress bar
+    const total = ddState.frames.length;
+    const cur = ddState.currentFrameIdx + 1;
+    const pct = total > 0 ? Math.round((cur / total) * 100) : 0;
+    document.getElementById('dd-prog-fill').style.width = pct + '%';
+    document.getElementById('dd-step-label').innerText = `Step ${cur} / ${total}`;
+}
+
+function ddStepForward() { ddPause(); if (ddState.currentFrameIdx < ddState.frames.length - 1) { ddState.currentFrameIdx++; renderDDFrame(); } }
+function ddStepBack() { ddPause(); if (ddState.currentFrameIdx > 0) { ddState.currentFrameIdx--; renderDDFrame(); } }
+
+function ddTogglePlay() {
+    if (ddState.isPlaying) { ddPause(); } else {
+        ddState.isPlaying = true;
+        document.getElementById('dd-play-btn').innerText = "Pause";
+        document.getElementById('dd-play-btn').classList.add('active-state');
+        ddLoop();
+    }
+}
+
+function ddPause() {
+    ddState.isPlaying = false; clearTimeout(ddState.timer);
+    const btn = document.getElementById('dd-play-btn');
+    if (btn) { btn.innerText = "Play Auto"; btn.classList.remove('active-state'); }
+}
+
+function ddLoop() {
+    if (!ddState.isPlaying) return;
+    if (ddState.currentFrameIdx < ddState.frames.length - 1) {
+        ddState.currentFrameIdx++; renderDDFrame();
+        let speedFactor = parseInt(document.getElementById('global-speed').value);
+        let delay = 1600 - speedFactor * 14;
+        ddState.timer = setTimeout(ddLoop, delay);
+    } else { ddPause(); }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PATHFINDING TAB
+// ═══════════════════════════════════════════════════════════════
+const PF_ROWS = 18, PF_COLS = 30;
+let pfGrid = [];
+let pfStartCell = [2, 2];
+let pfEndCell = [PF_ROWS - 3, PF_COLS - 3];
+let pfMode = 'wall';
+let pfIsDrawing = false;
+let pfRunning = false;
+let pfStopFlag = false;
+
+const pfAlgoInfo = {
+    bfs: { name: "Breadth-First Search", guarantee: "Shortest path (unweighted)", complete: "Yes", optimal: "Yes (unweighted)", desc: "Explores all neighbours at the current depth before going deeper. Guarantees the shortest path in terms of number of steps." },
+    dfs: { name: "Depth-First Search", guarantee: "A path (not shortest)", complete: "Yes", optimal: "No", desc: "Dives as deep as possible along each branch before backtracking. Fast but does not guarantee the shortest path." },
+    dijkstra: { name: "Dijkstra's Algorithm", guarantee: "Shortest path (weighted)", complete: "Yes", optimal: "Yes", desc: "Explores nodes in order of cumulative cost. Equivalent to BFS on unweighted grids, but generalises to weighted graphs." },
+    astar: { name: "A* Search", guarantee: "Shortest path", complete: "Yes", optimal: "Yes (admissible heuristic)", desc: "Combines Dijkstra's cost-so-far with a Manhattan distance heuristic to guide search toward the target efficiently." }
+};
+
+function updatePfAlgoInfo() {
+    const key = document.getElementById('pf-algo').value;
+    const info = pfAlgoInfo[key];
+    document.getElementById('pf-algo-info').innerHTML = `
+        <h4>${info.name}</h4>
+        <div class="pf-stat"><span>Guarantee</span><span class="pf-stat-val" style="font-size:0.78rem;">${info.guarantee}</span></div>
+        <div class="pf-stat"><span>Complete</span><span class="pf-stat-val">${info.complete}</span></div>
+        <div class="pf-stat"><span>Optimal</span><span class="pf-stat-val">${info.optimal}</span></div>
+        <p class="pf-desc">${info.desc}</p>
+    `;
+}
+document.addEventListener('DOMContentLoaded', () => { document.getElementById('pf-algo').addEventListener('change', updatePfAlgoInfo); });
+
+function initPfGrid() {
+    pfGrid = Array.from({length: PF_ROWS}, () => Array(PF_COLS).fill('empty'));
+    pfGrid[pfStartCell[0]][pfStartCell[1]] = 'start';
+    pfGrid[pfEndCell[0]][pfEndCell[1]] = 'end';
+    renderPfGrid(); clearPfStats();
+}
+
+function renderPfGrid() {
+    const container = document.getElementById('pf-grid');
+    container.style.gridTemplateColumns = `repeat(${PF_COLS}, 28px)`;
+    container.innerHTML = '';
+    for (let r = 0; r < PF_ROWS; r++) {
+        for (let c = 0; c < PF_COLS; c++) {
+            const cell = document.createElement('div');
+            cell.className = `pf-cell ${pfGrid[r][c]}`;
+            cell.dataset.r = r; cell.dataset.c = c;
+            cell.addEventListener('mousedown', pfCellMouseDown);
+            cell.addEventListener('mouseenter', pfCellMouseEnter);
+            cell.addEventListener('mouseup', () => { pfIsDrawing = false; });
+            container.appendChild(cell);
+        }
+    }
+    document.addEventListener('mouseup', () => { pfIsDrawing = false; });
+}
+
+function pfCellEl(r, c) { return document.querySelector(`#pf-grid .pf-cell:nth-child(${r * PF_COLS + c + 1})`); }
+
+function pfCellMouseDown(e) {
+    if (pfRunning) return;
+    pfIsDrawing = true;
+    const r = parseInt(this.dataset.r), c = parseInt(this.dataset.c);
+    if (pfMode === 'start') {
+        pfGrid[pfStartCell[0]][pfStartCell[1]] = 'empty';
+        const old = pfCellEl(pfStartCell[0], pfStartCell[1]); if (old) old.className = 'pf-cell empty';
+        pfStartCell = [r, c]; pfGrid[r][c] = 'start'; this.className = 'pf-cell start';
+    } else if (pfMode === 'end') {
+        pfGrid[pfEndCell[0]][pfEndCell[1]] = 'empty';
+        const old = pfCellEl(pfEndCell[0], pfEndCell[1]); if (old) old.className = 'pf-cell empty';
+        pfEndCell = [r, c]; pfGrid[r][c] = 'end'; this.className = 'pf-cell end';
+    } else {
+        const isWall = pfGrid[r][c] !== 'wall';
+        const newType = isWall ? 'wall' : 'empty';
+        if (pfGrid[r][c] !== 'start' && pfGrid[r][c] !== 'end') { pfGrid[r][c] = newType; this.className = `pf-cell ${newType}`; }
+    }
+    e.preventDefault();
+}
+
+function pfCellMouseEnter(e) {
+    if (!pfIsDrawing || pfRunning || pfMode !== 'wall') return;
+    const r = parseInt(this.dataset.r), c = parseInt(this.dataset.c);
+    if (pfGrid[r][c] !== 'start' && pfGrid[r][c] !== 'end') { pfGrid[r][c] = 'wall'; this.className = 'pf-cell wall'; }
+}
+
+function setPfMode(mode) {
+    pfMode = mode;
+    document.querySelectorAll('.pf-mode-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(`pf-btn-${mode}`).classList.add('active');
+}
+
+function clearPfGrid() { if (pfRunning) return; pfStopFlag = true; initPfGrid(); clearPfStats(); }
+
+function clearPfPath() {
+    if (pfRunning) return;
+    for (let r = 0; r < PF_ROWS; r++) for (let c = 0; c < PF_COLS; c++) {
+        if (pfGrid[r][c] === 'visited' || pfGrid[r][c] === 'path' || pfGrid[r][c] === 'frontier') {
+            pfGrid[r][c] = 'empty'; const el = pfCellEl(r, c); if (el) el.className = 'pf-cell empty';
+        }
+    }
+    clearPfStats();
+}
+
+function clearPfStats() {
+    document.getElementById('pf-stat-visited').innerText = '–';
+    document.getElementById('pf-stat-path').innerText = '–';
+    document.getElementById('pf-stat-time').innerText = '–';
+    document.getElementById('pf-stat-status').innerText = '–';
+}
+
+function pfStop() { pfStopFlag = true; pfRunning = false; }
+
+async function pfAnimateVisit(r, c, type) {
+    if (pfGrid[r][c] !== 'start' && pfGrid[r][c] !== 'end') {
+        pfGrid[r][c] = type; const el = pfCellEl(r, c); if (el) el.className = `pf-cell ${type}`;
+    }
+    const speed = parseInt(document.getElementById('global-speed').value);
+    const delay = Math.max(1, 60 - speed * 0.55);
+    await new Promise(r => setTimeout(r, delay));
+}
+
+async function runPathfind() {
+    if (pfRunning) return;
+    clearPfPath(); pfRunning = true; pfStopFlag = false;
+    const algo = document.getElementById('pf-algo').value;
+    const t0 = performance.now();
+    let visitedCount = 0, found = false; let parentMap = {};
+    const key = (r, c) => `${r},${c}`;
+    const [sr, sc] = pfStartCell, [er, ec] = pfEndCell;
+    const neighbors = (r, c) => {
+        const dirs = [[0,1],[1,0],[0,-1],[-1,0]];
+        return dirs.map(([dr, dc]) => [r+dr, c+dc]).filter(([nr, nc]) => nr >= 0 && nr < PF_ROWS && nc >= 0 && nc < PF_COLS && pfGrid[nr][nc] !== 'wall');
+    };
+
+    if (algo === 'bfs') {
+        const queue = [[sr, sc]]; const visited = new Set([key(sr, sc)]);
+        outer: while (queue.length > 0 && !pfStopFlag) {
+            const [r, c] = queue.shift();
+            for (const [nr, nc] of neighbors(r, c)) {
+                if (pfStopFlag) break outer;
+                if (!visited.has(key(nr, nc))) {
+                    visited.add(key(nr, nc)); parentMap[key(nr, nc)] = [r, c];
+                    if (nr === er && nc === ec) { found = true; break outer; }
+                    visitedCount++; await pfAnimateVisit(nr, nc, 'visited'); queue.push([nr, nc]);
+                }
+            }
+        }
+    } else if (algo === 'dfs') {
+        const stack = [[sr, sc]]; const visited = new Set([key(sr, sc)]);
+        outer: while (stack.length > 0 && !pfStopFlag) {
+            const [r, c] = stack.pop();
+            for (const [nr, nc] of neighbors(r, c)) {
+                if (pfStopFlag) break outer;
+                if (!visited.has(key(nr, nc))) {
+                    visited.add(key(nr, nc)); parentMap[key(nr, nc)] = [r, c];
+                    if (nr === er && nc === ec) { found = true; break outer; }
+                    visitedCount++; await pfAnimateVisit(nr, nc, 'visited'); stack.push([nr, nc]);
+                }
+            }
+        }
+    } else if (algo === 'dijkstra' || algo === 'astar') {
+        const dist = {}; dist[key(sr, sc)] = 0;
+        const h = (r, c) => algo === 'astar' ? Math.abs(r - er) + Math.abs(c - ec) : 0;
+        let open = [[0 + h(sr, sc), sr, sc]]; const visited = new Set();
+        outer: while (open.length > 0 && !pfStopFlag) {
+            open.sort((a, b) => a[0] - b[0]);
+            const [, r, c] = open.shift(); const k = key(r, c);
+            if (visited.has(k)) continue; visited.add(k);
+            if (r === er && c === ec) { found = true; break outer; }
+            if (r !== sr || c !== sc) { visitedCount++; await pfAnimateVisit(r, c, 'visited'); }
+            for (const [nr, nc] of neighbors(r, c)) {
+                if (pfStopFlag) break outer;
+                const nk = key(nr, nc);
+                if (!visited.has(nk)) {
+                    const nd = (dist[k] || 0) + 1;
+                    if (dist[nk] === undefined || nd < dist[nk]) {
+                        dist[nk] = nd; parentMap[nk] = [r, c]; open.push([nd + h(nr, nc), nr, nc]);
+                        if (nr === er && nc === ec) { found = true; break outer; }
+                    }
+                }
+            }
+        }
+    }
+    if (pfStopFlag) { pfRunning = false; return; }
+
+    let pathLen = 0;
+    if (found) {
+        let cur = [er, ec]; const path = [];
+        while (cur && !(cur[0] === sr && cur[1] === sc)) { path.unshift(cur); cur = parentMap[key(cur[0], cur[1])]; }
+        for (const [r, c] of path) {
+            if (pfStopFlag) break;
+            if (r !== er || c !== ec) {
+                pfGrid[r][c] = 'path'; const el = pfCellEl(r, c); if (el) el.className = 'pf-cell path';
+                await new Promise(res => setTimeout(res, 30));
+            }
+        }
+        pathLen = path.length;
+    }
+
+    const elapsed = (performance.now() - t0).toFixed(1);
+    document.getElementById('pf-stat-visited').innerText = visitedCount;
+    document.getElementById('pf-stat-path').innerText = found ? pathLen + ' steps' : '—';
+    document.getElementById('pf-stat-time').innerText = elapsed + ' ms';
+    document.getElementById('pf-stat-status').innerText = found ? '✓ Path found' : '✗ No path';
+    pfRunning = false;
+}
+
+async function generateMaze() {
+    if (pfRunning) return;
+    clearPfPath();
+    for (let r = 0; r < PF_ROWS; r++) for (let c = 0; c < PF_COLS; c++) {
+        if (pfGrid[r][c] !== 'start' && pfGrid[r][c] !== 'end') { pfGrid[r][c] = 'wall'; const el = pfCellEl(r, c); if (el) el.className = 'pf-cell wall'; }
+    }
+    const visited = new Set();
+    const carve = async (r, c) => {
+        visited.add(`${r},${c}`);
+        if (pfGrid[r][c] !== 'start' && pfGrid[r][c] !== 'end') { pfGrid[r][c] = 'empty'; const el = pfCellEl(r, c); if (el) el.className = 'pf-cell empty'; }
+        const dirs = [[0,2],[2,0],[0,-2],[-2,0]].sort(() => Math.random()-0.5);
+        for (const [dr, dc] of dirs) {
+            const nr = r + dr, nc = c + dc;
+            if (nr >= 0 && nr < PF_ROWS && nc >= 0 && nc < PF_COLS && !visited.has(`${nr},${nc}`)) {
+                const wr = r + dr/2, wc = c + dc/2;
+                pfGrid[wr][wc] = 'empty'; const wel = pfCellEl(wr, wc); if (wel) wel.className = 'pf-cell empty';
+                await carve(nr, nc);
+            }
+        }
+    };
+    const sr = pfStartCell[0] % 2 === 0 ? pfStartCell[0] + 1 : pfStartCell[0];
+    const sc = pfStartCell[1] % 2 === 0 ? pfStartCell[1] + 1 : pfStartCell[1];
+    await carve(Math.min(sr, PF_ROWS-1), Math.min(sc, PF_COLS-1));
+    pfGrid[pfStartCell[0]][pfStartCell[1]] = 'start';
+    pfGrid[pfEndCell[0]][pfEndCell[1]] = 'end';
+    pfGrid[pfStartCell[0]+1][pfStartCell[1]] = 'empty';
+    pfGrid[pfEndCell[0]-1][pfEndCell[1]] = 'empty';
+    renderPfGrid();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CUSTOM ALGORITHM DSL ENGINE
+// ═══════════════════════════════════════════════════════════════
+let dslArray = [9, 2, 7, 1, 5, 3];
+let dslState = { frames: [], currentFrameIdx: 0, isPlaying: false, timer: null };
+let dslInitialized = false;
+
+const DSL_PRESETS = {
+    bubble:`// Bubble Sort written in the Custom DSL
+for (let i = 0; i < n - 1; i++) {
+  for (let j = 0; j < n - i - 1; j++) {
+    if (compare(j, j + 1) > 0) {
+      swap(j, j + 1);
+    }
+  }
+}`,
+    selection:`// Selection Sort written in the Custom DSL
+for (let i = 0; i < n - 1; i++) {
+  let minIdx = i;
+  for (let j = i + 1; j < n; j++) {
+    if (compare(j, minIdx) < 0) {
+      minIdx = j;
+    }
+  }
+  if (minIdx !== i) swap(i, minIdx);
+}`,
+    blank: `// Write your own sorting logic here.
+// Available: compare(i, j), swap(i, j), get(i), set(i, value), n`
+};
+
+function dslInitIfEmpty() {
+    if (dslInitialized) return;
+    dslInitialized = true;
+    document.getElementById('dsl-code-input').value = DSL_PRESETS.bubble;
+    dslUpdateLineCount();
+    dslSetArray();
+    document.getElementById('dsl-code-input').addEventListener('input', dslUpdateLineCount);
+}
+
+function dslUpdateLineCount() {
+    const lines = document.getElementById('dsl-code-input').value.split('\n').length;
+    document.getElementById('dsl-line-count').innerText = `${lines} lines`;
+}
+
+function dslLoadPreset(name) {
+    document.getElementById('dsl-code-input').value = DSL_PRESETS[name];
+    dslUpdateLineCount();
+    dslLog(`Loaded "${name}" preset.`, 'ok');
+}
+
+function dslLog(msg, cls) {
+    const c = document.getElementById('dsl-console');
+    c.innerHTML = `<div class="${cls || ''}">${msg}</div>`;
+}
+
+function dslSetArray() {
+    const input = document.getElementById('dsl-array-input').value;
+    const parsed = input.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
+    if (parsed.length < 2 || parsed.length > 12) { alert('Please enter 2 to 12 valid numbers.'); return; }
+    dslArray = parsed;
+    renderVisuals(dslArray, 'dsl-bars', 'dsl-boxes');
+    dslState = { frames: [], currentFrameIdx: 0, isPlaying: false, timer: null };
+    document.getElementById('dsl-comps').innerText = '0';
+    document.getElementById('dsl-swaps').innerText = '0';
+    dslUpdateProgress();
+}
+
+function dslCompileAndRun(arr) {
+    const frames = [];
+    const temp = [...arr];
+    let comps = 0, swaps = 0;
+    
+    const compare = (i, j) => {
+        if (i < 0 || i >= temp.length || j < 0 || j >= temp.length) throw new Error(`compare(${i}, ${j}) is out of bounds for array length ${temp.length}.`);
+        comps++;
+        frames.push({ type: 'compare', indices: [i, j] });
+        return temp[i] - temp[j];
+    };
+    
+    const swap = (i, j) => {
+        if (i < 0 || i >= temp.length || j < 0 || j >= temp.length) throw new Error(`swap(${i}, ${j}) is out of bounds for array length ${temp.length}.`);
+        swaps++;
+        [temp[i], temp[j]] = [temp[j], temp[i]];
+        frames.push({ type: 'swap', indices: [i, j] });
+    };
+    
+    const get = (i) => {
+        if (i < 0 || i >= temp.length) throw new Error(`get(${i}) is out of bounds.`);
+        return temp[i];
+    };
+    
+    const set = (i, value) => {
+        if (i < 0 || i >= temp.length) throw new Error(`set(${i}, ...) is out of bounds.`);
+        swaps++;
+        temp[i] = value;
+        frames.push({ type: 'overwrite', indices: [i, value, Math.max(...arr, 100)] });
+    };
+    
+    const userCode = document.getElementById('dsl-code-input').value;
+    const n = temp.length;
+    
+    const FRAME_CAP = 20000;
+    const guardedCompare = (i, j) => { if (frames.length > FRAME_CAP) throw new Error('Step limit exceeded (possible infinite loop).'); return compare(i, j); };
+    const guardedSwap = (i, j) => { if (frames.length > FRAME_CAP) throw new Error('Step limit exceeded (possible infinite loop).'); return swap(i, j); };
+    
+    const runner = new Function('compare', 'swap', 'get', 'set', 'n', `
+        "use strict";
+        ${userCode}
+    `);
+    runner(guardedCompare, guardedSwap, get, set, n);
+    return { frames, finalArray: temp, comps, swaps };
+}
+
+function dslRun() {
+    dslLog('Running…', '');
+    let result;
+    try {
+        result = dslCompileAndRun(dslArray);
+    } catch (err) {
+        dslLog('Error: ' + err.message, 'err');
+        return;
+    }
+    dslState = { frames: result.frames, currentFrameIdx: -1, isPlaying: false, timer: null };
+    dslLog(`✓ Parsed successfully — ${result.frames.length} steps generated. Array sorted: ${JSON.stringify(result.finalArray)}`, 'ok');
+    renderVisuals(dslArray, 'dsl-bars', 'dsl-boxes');
+    document.getElementById('dsl-comps').innerText = '0';
+    document.getElementById('dsl-swaps').innerText = '0';
+    dslUpdateProgress();
+    dslPlayFromStart();
+}
+
+async function dslPlayFromStart() {
+    dslState.currentFrameIdx = -1;
+    dslState.isPlaying = true;
+    document.getElementById('dsl-play-btn').innerText = 'Pause';
+    document.getElementById('dsl-play-btn').classList.add('active-state');
+    
+    let comps = 0, swaps = 0;
+    let workArr = [...dslArray];
+    let activeBars = [];
+    
+    for (let i = 0; i < dslState.frames.length; i++) {
+        if (!dslState.isPlaying) { dslState.currentFrameIdx = i - 1; return; }
+        const frame = dslState.frames[i];
+        const speedFactor = parseInt(document.getElementById('global-speed').value);
+        const delay = Math.max(8, (1010 - speedFactor * 10) * 0.4);
+        
+        activeBars.forEach(id => { const b = document.getElementById(id); if (b) b.style.background = ''; });
+        activeBars = [];
+        
+        if (frame.type === 'compare') {
+            comps++; document.getElementById('dsl-comps').innerText = comps;
+            const [i1, i2] = frame.indices;
+            const b1 = document.getElementById(`dsl-bars-${i1}`), b2 = document.getElementById(`dsl-bars-${i2}`);
+            if (b1) { b1.style.background = 'var(--bar-compare)'; activeBars.push(`dsl-bars-${i1}`); }
+            if (b2) { b2.style.background = 'var(--bar-compare)'; activeBars.push(`dsl-bars-${i2}`); }
+        } else if (frame.type === 'swap') {
+            swaps++; document.getElementById('dsl-swaps').innerText = swaps;
+            const [i1, i2] = frame.indices;
+            const bar1 = document.getElementById(`dsl-bars-${i1}`), bar2 = document.getElementById(`dsl-bars-${i2}`);
+            const box1 = document.getElementById(`box-${i1}`), box2 = document.getElementById(`box-${i2}`);
+            if (bar1 && bar2) {
+                bar1.style.background = 'var(--bar-active)'; bar2.style.background = 'var(--bar-active)';
+                let t = bar1.style.height; bar1.style.height = bar2.style.height; bar2.style.height = t;
+                activeBars.push(`dsl-bars-${i1}`, `dsl-bars-${i2}`);
+            }
+            if (box1 && box2) { let t = box1.innerText; box1.innerText = box2.innerText; box2.innerText = t; }
+            [workArr[i1], workArr[i2]] = [workArr[i2], workArr[i1]];
+        } else if (frame.type === 'overwrite') {
+            swaps++; document.getElementById('dsl-swaps').innerText = swaps;
+            const [idx, val, maxVal] = frame.indices;
+            const bar = document.getElementById(`dsl-bars-${idx}`), box = document.getElementById(`box-${idx}`);
+            if (bar) { bar.style.background = 'var(--bar-active)'; bar.style.height = `${(val / maxVal) * 100}%`; activeBars.push(`dsl-bars-${idx}`); }
+            if (box) box.innerText = val;
+            workArr[idx] = val;
+        }
+        
+        dslState.currentFrameIdx = i;
+        dslUpdateProgress();
+        await new Promise(r => setTimeout(r, delay));
+    }
+    
+    document.querySelectorAll('#dsl-bars .bar').forEach(b => b.style.background = 'var(--bar-active)');
+    dslPause();
+}
+
+function dslUpdateProgress() {
+    const total = dslState.frames.length;
+    const cur = Math.max(0, dslState.currentFrameIdx + 1);
+    const pct = total > 0 ? Math.round((cur / total) * 100) : 0;
+    document.getElementById('dsl-progress-fill').style.width = pct + '%';
+    document.getElementById('dsl-pct').innerText = pct + '%';
+    document.getElementById('dsl-step-text').innerText = `Step ${cur} / ${total}`;
+}
+
+function dslTogglePlay() {
+    if (dslState.frames.length === 0) { dslLog('Run your algorithm first.', 'err'); return; }
+    if (dslState.isPlaying) { dslPause(); } else { dslPlayFromStart(); }
+}
+
+function dslPause() {
+    dslState.isPlaying = false;
+    const btn = document.getElementById('dsl-play-btn');
+    if (btn) { btn.innerText = 'Play Auto'; btn.classList.remove('active-state'); }
+}
+
+function dslStepForward() { dslLog('Use Play Auto to step through — single-step coming soon.', ''); }
+function dslStepBack() { dslLog('Use Play Auto to step through — single-step coming soon.', ''); }
+
+// ═══════════════════════════════════════════════════════════════
+// CODE LIBRARY TAB
+// ═══════════════════════════════════════════════════════════════
+const libCode = {
+    bubble: { title: "Bubble Sort", sub: "O(n²) time · O(1) space · stable", code:`function bubbleSort(arr) {
+  const a = [...arr];
+  for (let i = 0; i < a.length - 1; i++) {
+    for (let j = 0; j < a.length - i - 1; j++) {
+      if (a[j] > a[j + 1]) {
+        [a[j], a[j + 1]] = [a[j + 1], a[j]];
+      }
+    }
+  }
+  return a;
+}`, runnable: (arr) => libRunSort('bubbleSort', arr) },
+    selection: { title: "Selection Sort", sub: "O(n²) time · O(1) space · unstable", code:`function selectionSort(arr) {
+  const a = [...arr];
+  for (let i = 0; i < a.length - 1; i++) {
+    let minIdx = i;
+    for (let j = i + 1; j < a.length; j++) {
+      if (a[j] < a[minIdx]) minIdx = j;
+    }
+    if (minIdx !== i) [a[minIdx], a[i]] = [a[i], a[minIdx]];
+  }
+  return a;
+}`, runnable: (arr) => libRunSort('selectionSort', arr) },
+    insertion: { title: "Insertion Sort", sub: "O(n²) time · O(1) space · stable", code:`function insertionSort(arr) {
+  const a = [...arr];
+  for (let i = 1; i < a.length; i++) {
+    let key = a[i];
+    let j = i - 1;
+    while (j >= 0 && a[j] > key) {
+      a[j + 1] = a[j];
+      j--;
+    }
+    a[j + 1] = key;
+  }
+  return a;
+}`, runnable: (arr) => libRunSort('insertionSort', arr) },
+    merge: { title: "Merge Sort", sub: "O(n log n) time · O(n) space · stable", code:`function mergeSort(arr) {
+  if (arr.length <= 1) return arr;
+  const mid = Math.floor(arr.length / 2);
+  const left = mergeSort(arr.slice(0, mid));
+  const right = mergeSort(arr.slice(mid));
+  return merge(left, right);
+}
+
+function merge(left, right) {
+  const result = [];
+  let i = 0, j = 0;
+  while (i < left.length && j < right.length) {
+    if (left[i] <= right[j]) result.push(left[i++]);
+    else result.push(right[j++]);
+  }
+  return result.concat(left.slice(i)).concat(right.slice(j));
+}`, runnable: (arr) => libRunSort('mergeSort', arr) },
+    quick: { title: "Quick Sort", sub: "O(n log n) avg · O(log n) space · unstable", code:`function quickSort(arr) {
+  const a = [...arr];
+  function partition(low, high) {
+    const pivot = a[high];
+    let i = low - 1;
+    for (let j = low; j < high; j++) {
+      if (a[j] < pivot) {
+        i++;
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+    }
+    [a[i + 1], a[high]] = [a[high], a[i + 1]];
+    return i + 1;
+  }
+  function sort(low, high) {
+    if (low < high) {
+      const pi = partition(low, high);
+      sort(low, pi - 1);
+      sort(pi + 1, high);
+    }
+  }
+  sort(0, a.length - 1);
+  return a;
+}`, runnable: (arr) => libRunSort('quickSort', arr) },
+    heap: { title: "Heap Sort", sub: "O(n log n) time · O(1) space · unstable", code:`function heapSort(arr) {
+  const a = [...arr];
+  const n = a.length;
+  function heapify(size, i) {
+    let largest = i;
+    const l = 2 * i + 1, r = 2 * i + 2;
+    if (l < size && a[l] > a[largest]) largest = l;
+    if (r < size && a[r] > a[largest]) largest = r;
+    if (largest !== i) {
+      [a[i], a[largest]] = [a[largest], a[i]];
+      heapify(size, largest);
+    }
+  }
+  for (let i = Math.floor(n / 2) - 1; i >= 0; i--) heapify(n, i);
+  for (let i = n - 1; i > 0; i--) {
+    [a[0], a[i]] = [a[i], a[0]];
+    heapify(i, 0);
+  }
+  return a;
+}`, runnable: (arr) => libRunSort('heapSort', arr) },
+    shell: { title: "Shell Sort", sub: "O(n log n) avg · O(1) space · unstable", code:`function shellSort(arr) {
+  const a = [...arr];
+  const n = a.length;
+  for (let gap = Math.floor(n / 2); gap > 0; gap = Math.floor(gap / 2)) {
+    for (let i = gap; i < n; i++) {
+      const temp = a[i];
+      let j = i;
+      while (j >= gap && a[j - gap] > temp) {
+        a[j] = a[j - gap];
+        j -= gap;
+      }
+      a[j] = temp;
+    }
+  }
+  return a;
+}`, runnable: (arr) => libRunSort('shellSort', arr) },
+    radix: { title: "Radix Sort", sub: "O(nk) time · O(n+k) space · stable", code:`function radixSort(arr) {
+  let a = [...arr];
+  const max = Math.max(...a);
+  for (let exp = 1; Math.floor(max / exp) > 0; exp *= 10) {
+    a = countingSortByDigit(a, exp);
+  }
+  return a;
+}
+
+function countingSortByDigit(a, exp) {
+  const n = a.length;
+  const output = new Array(n);
+  const count = new Array(10).fill(0);
+  for (let i = 0; i < n; i++) count[Math.floor(a[i] / exp) % 10]++;
+  for (let i = 1; i < 10; i++) count[i] += count[i - 1];
+  for (let i = n - 1; i >= 0; i--) {
+    const digit = Math.floor(a[i] / exp) % 10;
+    output[count[digit] - 1] = a[i];
+    count[digit]--;
+  }
+  return output;
+}`, runnable: (arr) => libRunSort('radixSort', arr) },
+    counting: { title: "Counting Sort", sub: "O(n+k) time · O(k) space · stable", code:`function countingSort(arr) {
+  const max = Math.max(...arr);
+  const min = Math.min(...arr);
+  const count = new Array(max - min + 1).fill(0);
+  for (const v of arr) count[v - min]++;
+  const result = [];
+  for (let i = 0; i < count.length; i++) {
+    while (count[i] > 0) {
+      result.push(i + min);
+      count[i]--;
+    }
+  }
+  return result;
+}`, runnable: (arr) => libRunSort('countingSort', arr) },
+    cocktail: { title: "Cocktail Shaker Sort", sub: "O(n²) time · O(1) space · stable", code:`function cocktailSort(arr) {
+  const a = [...arr];
+  let start = 0, end = a.length - 1, swapped = true;
+  while (swapped) {
+    swapped = false;
+    for (let i = start; i < end; i++) {
+      if (a[i] > a[i + 1]) {
+        [a[i], a[i + 1]] = [a[i + 1], a[i]];
+        swapped = true;
+      }
+    }
+    if (!swapped) break;
+    swapped = false;
+    end--;
+    for (let i = end - 1; i >= start; i--) {
+      if (a[i] > a[i + 1]) {
+        [a[i], a[i + 1]] = [a[i + 1], a[i]];
+        swapped = true;
+      }
+    }
+    start++;
+  }
+  return a;
+}`, runnable: (arr) => libRunSort('cocktailSort', arr) },
+    bfs: { title: "Breadth-First Search", sub: "Pathfinding · shortest path (unweighted)", code:`function bfs(grid, start, end) {
+  const rows = grid.length, cols = grid[0].length;
+  const key = (r, c) => \`\${r},\${c}\`;
+  const queue = [start];
+  const visited = new Set([key(...start)]);
+  const parent = {};
+  
+  const neighbors = (r, c) => [[0,1],[1,0],[0,-1],[-1,0]]
+    .map(([dr, dc]) => [r + dr, c + dc])
+    .filter(([nr, nc]) => nr >= 0 && nr < rows && nc >= 0 && nc < cols && grid[nr][nc] !== 1);
+
+  while (queue.length) {
+    const [r, c] = queue.shift();
+    if (r === end[0] && c === end[1]) return reconstructPath(parent, start, end);
+    for (const [nr, nc] of neighbors(r, c)) {
+      if (!visited.has(key(nr, nc))) {
+        visited.add(key(nr, nc));
+        parent[key(nr, nc)] = [r, c];
+        queue.push([nr, nc]);
+      }
+    }
+  }
+  return null; // no path found
+}
+
+function reconstructPath(parent, start, end) {
+  const path = [];
+  let cur = end;
+  while (cur && (cur[0] !== start[0] || cur[1] !== start[1])) {
+    path.unshift(cur);
+    cur = parent[\`\${cur[0]},\${cur[1]}\`];
+  }
+  path.unshift(start);
+  return path;
+}`, runnable: null },
+    dfs: { title: "Depth-First Search", sub: "Pathfinding · finds a path, not shortest", code:`function dfs(grid, start, end) {
+  const rows = grid.length, cols = grid[0].length;
+  const key = (r, c) => \`\${r},\${c}\`;
+  const stack = [start];
+  const visited = new Set([key(...start)]);
+  const parent = {};
+  
+  const neighbors = (r, c) => [[0,1],[1,0],[0,-1],[-1,0]]
+    .map(([dr, dc]) => [r + dr, c + dc])
+    .filter(([nr, nc]) => nr >= 0 && nr < rows && nc >= 0 && nc < cols && grid[nr][nc] !== 1);
+
+  while (stack.length) {
+    const [r, c] = stack.pop();
+    if (r === end[0] && c === end[1]) return reconstructPath(parent, start, end);
+    for (const [nr, nc] of neighbors(r, c)) {
+      if (!visited.has(key(nr, nc))) {
+        visited.add(key(nr, nc));
+        parent[key(nr, nc)] = [r, c];
+        stack.push([nr, nc]);
+      }
+    }
+  }
+  return null;
+}`, runnable: null },
+    dijkstra: { title: "Dijkstra's Algorithm", sub: "Pathfinding · shortest path (weighted)", code:`function dijkstra(grid, start, end) {
+  const rows = grid.length, cols = grid[0].length;
+  const key = (r, c) => \`\${r},\${c}\`;
+  const dist = { [key(...start)]: 0 };
+  const parent = {};
+  let open = [[0, ...start]]; // [distance, r, c]
+  const visited = new Set();
+  
+  const neighbors = (r, c) => [[0,1],[1,0],[0,-1],[-1,0]]
+    .map(([dr, dc]) => [r + dr, c + dc])
+    .filter(([nr, nc]) => nr >= 0 && nr < rows && nc >= 0 && nc < cols && grid[nr][nc] !== 1);
+
+  while (open.length) {
+    open.sort((a, b) => a[0] - b[0]);
+    const [d, r, c] = open.shift();
+    const k = key(r, c);
+    
+    if (visited.has(k)) continue;
+    visited.add(k);
+    
+    if (r === end[0] && c === end[1]) return reconstructPath(parent, start, end);
+    
+    for (const [nr, nc] of neighbors(r, c)) {
+      const nk = key(nr, nc);
+      const nd = d + 1; // uniform edge weight = 1
+      if (dist[nk] === undefined || nd < dist[nk]) {
+        dist[nk] = nd;
+        parent[nk] = [r, c];
+        open.push([nd, nr, nc]);
+      }
+    }
+  }
+  return null;
+}`, runnable: null },
+    astar: { title: "A* Search", sub: "Pathfinding · shortest path + heuristic", code:`function aStar(grid, start, end) {
+  const rows = grid.length, cols = grid[0].length;
+  const key = (r, c) => \`\${r},\${c}\`;
+  const h = (r, c) => Math.abs(r - end[0]) + Math.abs(c - end[1]); // Manhattan distance
+  
+  const dist = { [key(...start)]: 0 };
+  const parent = {};
+  let open = [[h(...start), ...start]]; // [f-score, r, c]
+  const visited = new Set();
+  
+  const neighbors = (r, c) => [[0,1],[1,0],[0,-1],[-1,0]]
+    .map(([dr, dc]) => [r + dr, c + dc])
+    .filter(([nr, nc]) => nr >= 0 && nr < rows && nc >= 0 && nc < cols && grid[nr][nc] !== 1);
+
+  while (open.length) {
+    open.sort((a, b) => a[0] - b[0]);
+    const [, r, c] = open.shift();
+    const k = key(r, c);
+    
+    if (visited.has(k)) continue;
+    visited.add(k);
+    
+    if (r === end[0] && c === end[1]) return reconstructPath(parent, start, end);
+    
+    for (const [nr, nc] of neighbors(r, c)) {
+      const nk = key(nr, nc);
+      const g = (dist[k] || 0) + 1;
+      if (dist[nk] === undefined || g < dist[nk]) {
+        dist[nk] = g;
+        parent[nk] = [r, c];
+        open.push([g + h(nr, nc), nr, nc]);
+      }
+    }
+  }
+  return null;
+}`, runnable: null },
+};
+
+const LIB_CATEGORIES = [
+    { label: 'Sorting Algorithms', keys: ['bubble','selection','insertion','merge','quick','heap','shell','radix','counting','cocktail'] },
+    { label: 'Pathfinding Algorithms', keys: ['bfs','dfs','dijkstra','astar'] }
+];
+
+let libActiveKey = 'bubble';
+let libInitialized = false;
+
+function libInitIfEmpty() {
+    if (libInitialized) return;
+    libInitialized = true;
+    const sidebar = document.getElementById('lib-sidebar');
+    sidebar.innerHTML = '';
+    
+    LIB_CATEGORIES.forEach(cat => {
+        const label = document.createElement('div');
+        label.className = 'lib-cat-label'; label.innerText = cat.label;
+        sidebar.appendChild(label);
+        
+        cat.keys.forEach(key => {
+            const item = document.createElement('div');
+            item.className = 'lib-item' + (key === libActiveKey ? ' active' : '');
+            item.id = `lib-item-${key}`;
+            item.innerHTML = `<span>${libCode[key].title}</span><span class="lib-tag">${libCode[key].runnable ? '▶' : 'grid'}</span>`;
+            item.onclick = () => libSelect(key);
+            sidebar.appendChild(item);
+        });
+    });
+    libRenderActive();
+}
+
+function libSelect(key) {
+    libActiveKey = key;
+    document.querySelectorAll('.lib-item').forEach(el => el.classList.remove('active'));
+    document.getElementById(`lib-item-${key}`).classList.add('active');
+    libRenderActive();
+}
+
+function libHighlight(code) {
+    return code
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/(\/\/.*)/g, '<span class="cm">$1</span>')
+        .replace(/\b(function|return|if|else|while|for|let|const|new|break|continue)\b/g, '<span class="kw">$1</span>')
+        .replace(/`([^`]*)`/g, '<span class="str">`$1`</span>')
+        .replace(/\b(\d+)\b/g, '<span class="num">$1</span>');
+}
+
+function libRenderActive() {
+    const item = libCode[libActiveKey];
+    document.getElementById('lib-title').innerText = item.title;
+    document.getElementById('lib-subtitle').innerText = item.sub;
+    document.getElementById('lib-code-display').innerHTML = libHighlight(item.code);
+    document.getElementById('lib-run-output').innerText = item.runnable
+        ? 'Output will appear here.'
+        : 'This algorithm operates on a grid — try it live in the Pathfinding tab.';
+}
+
+function libCopyActive() {
+    const code = libCode[libActiveKey].code;
+    navigator.clipboard.writeText(code).then(() => {
+        const btn = document.querySelector('.lib-copy-btn');
+        const original = btn.innerText;
+        btn.innerText = 'Copied!';
+        setTimeout(() => btn.innerText = original, 1500);
+    }).catch(() => alert('Could not copy — please select and copy manually.'));
+}
+
+function libRunSort(fnName, arr) {
+    const code = libCode[libActiveKey].code;
+    const runner = new Function(`
+        ${code}
+        return ${fnName}(arguments[0]);
+    `);
+    return runner(arr);
+}
+
+function libRunActive() {
+    const item = libCode[libActiveKey];
+    const out = document.getElementById('lib-run-output');
+    if (!item.runnable) {
+        out.innerText = 'This algorithm operates on a grid — try it live in the Pathfinding tab.';
+        return;
+    }
+    const input = document.getElementById('lib-test-input').value;
+    const parsed = input.split(',').map(n => parseInt(n.trim())).filter(n => !isNaN(n));
+    if (parsed.length === 0) { out.innerText = 'Enter a valid comma-separated array first.'; return; }
+    try {
+        const result = item.runnable(parsed);
+        out.innerHTML = `<span style="color:#0d9488;">Input:</span> [${parsed.join(', ')}]<br><span style="color:#6366f1;">Output:</span> [${result.join(', ')}]`;
+    } catch (err) {
+        out.innerHTML = `<span style="color:#e11d48;">Error: ${err.message}</span>`;
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GLOBAL INIT
+// ═══════════════════════════════════════════════════════════════
+window.onload = function() { 
+    init(); 
+    initPfGrid(); 
+    updatePfAlgoInfo(); 
+};
+</script>
+</body>
+</html>
