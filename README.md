@@ -81,6 +81,7 @@ for (let i = 0; i < n - 1; i++) {
 }
 
 ## 🤝 Contributing
+
 Contributions, issues, and feature requests are welcome!
 If you want to add a new algorithm or improve the UI:
 
@@ -89,8 +90,12 @@ If you want to add a new algorithm or improve the UI:
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`).
 4. Push to the branch (`git push origin feature/AmazingFeature`).
 5. Open a Pull Request.
+
+---
+
 ## 📄 License
-This project is open-source and available under the [MIT License](LICENSE).
+
+This project is open-source and available under the MIT License.
 
 ---
 *Built with ❤️ by Shirsendu*
