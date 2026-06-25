@@ -98,4 +98,4 @@ If you want to add a new algorithm or improve the UI:
 This project is open-source and available under the MIT License.
 
 ---
-*Built with ❤️ by Shirsendu*
+*Built with ❤️ and passion by Shirsendu*
